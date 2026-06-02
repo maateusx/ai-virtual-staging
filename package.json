@@ -1,0 +1,20 @@
+{
+  "name": "decorar-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Virtual staging tool (MVP síncrono) — Fastify + Mongoose + React",
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "scripts": {
+    "dev": "npm-run-all --parallel dev:server dev:web",
+    "dev:server": "npm --workspace server run dev",
+    "dev:web": "npm --workspace web run dev",
+    "seed": "npm --workspace server run seed",
+    "build": "npm --workspace web run build"
+  },
+  "devDependencies": {
+    "npm-run-all": "^4.1.5"
+  }
+}

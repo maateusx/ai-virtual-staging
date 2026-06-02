@@ -1,0 +1,44 @@
+import Fastify from 'fastify';
+import cors from '@fastify/cors';
+import multipart from '@fastify/multipart';
+import fastifyStatic from '@fastify/static';
+import { env } from './config/env.js';
+import { UPLOADS_ROOT } from './services/storage.js';
+import { stagingRoutes } from './routes/staging.js';
+import { adminRoutes } from './routes/admin.js';
+
+export async function buildApp() {
+  const app = Fastify({
+    logger: {
+      transport: {
+        target: 'pino-pretty',
+        options: { translateTime: 'HH:MM:ss', ignore: 'pid,hostname' },
+      },
+    },
+    // Synchronous staging can take up to ~2 min (spec §8).
+    requestTimeout: 130_000,
+    bodyLimit: 20 * 1024 * 1024,
+  });
+
+  await app.register(cors, { origin: env.webOrigin });
+
+  await app.register(multipart, {
+    limits: { fileSize: 16 * 1024 * 1024, files: 1 },
+  });
+
+  // Serve uploaded/generated images.
+  await app.register(fastifyStatic, {
+    root: UPLOADS_ROOT,
+    prefix: '/uploads/',
+  });
+
+  app.get('/health', async () => ({
+    status: 'ok',
+    provider: env.gemini.enabled ? 'gemini' : 'mock',
+  }));
+
+  await app.register(stagingRoutes);
+  await app.register(adminRoutes);
+
+  return app;
+}
