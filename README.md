@@ -19,7 +19,7 @@ em [`docs/design-system.md`](docs/design-system.md).
 
 - **Backend** (`server/`): Node.js + Fastify + Mongoose (MongoDB)
 - **Frontend** (`web/`): React + Vite + Tailwind + shadcn-style UI + Zustand
-- **IA**: Google Gemini ("Nano Banana", `gemini-3.1-flash-image`) chamado direto via `@google/genai` — com *fallback* mock quando `GEMINI_API_KEY` não está definido
+- **IA**: Google Gemini ("Nano Banana", `gemini-3.1-flash-image`) chamado direto via `@google/genai` — a chave pode vir do servidor (`GEMINI_API_KEY`) ou do próprio usuário (BYOK, colada na interface)
 - **Imagem**: `sharp` (libvips) para reframe determinístico (recorte / barras) da proporção de saída
 - **Storage**: disco local servido pelo Fastify (`/uploads`), abstraído para troca por S3
 
@@ -32,7 +32,7 @@ em [`docs/design-system.md`](docs/design-system.md).
 ## Setup
 
 ```bash
-cp .env.example .env        # ajuste GEMINI_API_KEY para usar o modelo real (opcional)
+cp .env.example .env        # defina GEMINI_API_KEY (ou deixe vazio e use BYOK na interface)
 npm install                 # instala server + web (workspaces)
 npm run seed                # popula os parâmetros sugeridos da spec
 npm run dev                 # sobe backend (:3333) e frontend (:5173)
@@ -41,9 +41,10 @@ npm run dev                 # sobe backend (:3333) e frontend (:5173)
 - App: http://localhost:5173
 - API: http://localhost:3333 (`GET /health`)
 
-Sem `GEMINI_API_KEY`, o backend roda em **modo mock** e devolve a imagem original —
-útil para desenvolver toda a interface sem credenciais. Gere a key em
-https://aistudio.google.com/apikey.
+É preciso uma chave do Gemini para processar: defina `GEMINI_API_KEY` no servidor
+**ou** deixe vazio e cole a chave na própria interface (BYOK — fica salva só no
+navegador do usuário e tem precedência sobre a do servidor). Sem nenhuma das duas,
+a API responde `422`. Gere a key em https://aistudio.google.com/apikey.
 
 ## Estrutura
 
@@ -54,7 +55,7 @@ server/src
   models/                StagingParameter (com opções embutidas), StagingJob
   services/
     promptBuilder.js     monta o prompt final por modo (spec §6)
-    imageProvider.js     Gemini (Nano Banana) + fallback mock
+    imageProvider.js     Gemini (Nano Banana); chave do servidor ou BYOK
     outputFormats.js     presets/validação de proporção, resolução e ajuste
     reframe.js           reframe com sharp (crop/pad) + outpaint com IA
     storage.js           disco local → URL pública

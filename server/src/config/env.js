@@ -20,7 +20,8 @@ export const env = {
   gemini: {
     key: GEMINI_API_KEY.trim(),
     model: GEMINI_MODEL,
-    // When no key is configured we run in mock mode (returns the input image).
+    // Whether the server has its own key. When false, requests must supply a
+    // key (BYOK) or they are rejected — there is no mock fallback.
     enabled: GEMINI_API_KEY.trim().length > 0,
   },
 };

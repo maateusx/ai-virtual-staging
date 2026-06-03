@@ -21,7 +21,17 @@ export const api = {
   // ---- Public ----
   getConfig: () => fetch(`${API_URL}/v1/staging/config`).then(handle),
 
-  process: ({ image, selections, extraPrompt, mode, aspectRatio, aspectFit, imageSize }) => {
+  process: ({
+    image,
+    selections,
+    extraPrompt,
+    mode,
+    aspectRatio,
+    aspectFit,
+    imageSize,
+    apiKey,
+    variations,
+  }) => {
     const fd = new FormData();
     fd.append('image', image);
     fd.append('selections', JSON.stringify(selections));
@@ -30,6 +40,8 @@ export const api = {
     if (aspectRatio) fd.append('aspect_ratio', aspectRatio);
     if (aspectFit) fd.append('aspect_fit', aspectFit);
     if (imageSize) fd.append('image_size', imageSize);
+    if (apiKey) fd.append('gemini_api_key', apiKey);
+    if (variations) fd.append('variations', String(variations));
     return fetch(`${API_URL}/v1/staging`, { method: 'POST', body: fd }).then(handle);
   },
 

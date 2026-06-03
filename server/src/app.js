@@ -34,7 +34,9 @@ export async function buildApp() {
 
   app.get('/health', async () => ({
     status: 'ok',
-    provider: env.gemini.enabled ? 'gemini' : 'mock',
+    provider: 'gemini',
+    // When false, requests must supply their own key (BYOK).
+    server_has_key: env.gemini.enabled,
   }));
 
   await app.register(stagingRoutes);

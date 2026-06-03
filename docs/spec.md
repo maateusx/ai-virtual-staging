@@ -97,7 +97,9 @@ Ações: criar/editar/remover parâmetro, criar/editar/remover opção, ativar/d
 
 Provedor atual: **Google Gemini** ("Nano Banana", `gemini-3.1-flash-image`),
 chamado direto via `@google/genai` — chamada de API gerenciada, o backend não
-precisa de GPU. Sem `GEMINI_API_KEY`, roda em modo *mock* (devolve a entrada).
+precisa de GPU. A chave pode ser do servidor (`GEMINI_API_KEY`) ou enviada pelo
+cliente (BYOK, campo `gemini_api_key`), que tem precedência. Sem nenhuma das
+duas, a requisição é rejeitada com `422`.
 
 ## 5. Contrato da API
 
@@ -142,10 +144,13 @@ GET /v1/staging/config
       { "id": "ai",   "label": "Expandir com IA" }
     ],
     "default_aspect_fit": "crop"
-  }
+  },
+  "server_has_key": true
 }
 ```
 Observações: `prompt_fragment` **não** é exposto aqui — fica só no backend.
+`server_has_key` indica se o backend tem chave própria; quando `false`, o cliente
+**precisa** enviar `gemini_api_key` (BYOK) na requisição de processamento.
 `modes` e `output` são listas curadas no código (`promptBuilder.js` /
 `outputFormats.js`), não no banco.
 
@@ -162,20 +167,31 @@ mode:         "furnish"            (opcional, default "furnish")
 aspect_ratio: "original"          (opcional, default "original")
 aspect_fit:   "crop"              (opcional, default "crop"; usado se aspect_ratio ≠ original)
 image_size:   "1K"               (opcional, default "1K")
+variations:   "1"                 (opcional, default 1; inteiro 1..4 — geradas em paralelo)
+gemini_api_key: "AIza..."         (BYOK; obrigatório se o servidor não tiver chave. Tem precedência. Não é persistido.)
 
 200 OK
 {
-  "result_image_url": "https://.../out/abc.jpg",   // URL temporária
+  "result_image_url": "https://.../out/abc.jpg",   // 1ª variação (back-compat)
+  "variations": [                                   // 1..N variações geradas
+    { "result_image_url": "https://.../out/abc.jpg" }
+  ],
+  "requested_variations": 1,
   "composed_prompt":  "...",                        // para debug/transparência
   "mode":          "furnish",
   "aspect_ratio":  "original",
   "aspect_fit":    "crop",
   "image_size":    "1K",
   "model": "gemini-3.1-flash-image",
-  "processing_ms": 14820
+  "processing_ms": 14820,
+  "usage": {                                        // tokens somados de todas as variações
+    "prompt_tokens": 312,
+    "output_tokens": 1290,
+    "total_tokens": 1602
+  }
 }
 
-422 — parâmetro inválido / imagem ausente / mode/aspect_ratio/aspect_fit/image_size inválidos
+422 — parâmetro inválido / imagem ausente / mode/aspect_ratio/aspect_fit/image_size/variations inválidos
 502 — falha do provedor de modelo
 ```
 
@@ -263,7 +279,7 @@ staging_job          (opcional — histórico)
 - **Dependência `sharp`**: usada para o reframe determinístico. É binária
   (libvips) e instala junto no `npm install`.
 - **Resolução**: `image_size` (1K/2K/4K) é a única parte de `imageConfig` enviada
-  ao Gemini; o modo *mock* a ignora.
+  ao Gemini.
 - **Parâmetros**: assumidos como globais (definidos por admin). Se forem por
   tenant, adicionar `tenant_id` em `staging_parameter`/`_option`.
 - **Auth/tenant**: assume-se que já existe sessão/usuário autenticado.

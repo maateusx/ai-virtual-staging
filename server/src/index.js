@@ -9,7 +9,9 @@ async function main() {
     await connectDb(app.log);
     await app.listen({ port: env.port, host: env.host });
     app.log.info(
-      `Image provider: ${env.gemini.enabled ? `gemini (${env.gemini.model})` : 'MOCK (set GEMINI_API_KEY to enable Gemini)'}`
+      env.gemini.enabled
+        ? `Image provider: gemini (${env.gemini.model})`
+        : 'Image provider: gemini — no server key set; requests must supply their own (BYOK)'
     );
   } catch (err) {
     app.log.error(err);

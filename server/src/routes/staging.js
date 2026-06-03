@@ -6,7 +6,8 @@ import {
   STAGING_MODES,
   DEFAULT_MODE,
 } from '../services/promptBuilder.js';
-import { generateStaging, ProviderError } from '../services/imageProvider.js';
+import { generateStaging, ProviderError, MissingApiKeyError } from '../services/imageProvider.js';
+import { env } from '../config/env.js';
 import { saveBuffer, extForMime } from '../services/storage.js';
 import {
   isValidAspectRatio,
@@ -23,6 +24,7 @@ import { reframe, expandWithAi } from '../services/reframe.js';
 
 const MAX_IMAGE_BYTES = 15 * 1024 * 1024; // 15 MB
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
+const MAX_VARIATIONS = 4;
 
 export async function stagingRoutes(app) {
   // --- 5.1 Public config (no prompt_fragment exposed) -----------------------
@@ -33,6 +35,8 @@ export async function stagingRoutes(app) {
       output: publicOutputConfig(),
       modes: STAGING_MODES,
       default_mode: DEFAULT_MODE,
+      // When false, the client MUST supply its own Gemini key (BYOK).
+      server_has_key: env.gemini.enabled,
     };
   });
 
@@ -49,6 +53,8 @@ export async function stagingRoutes(app) {
     let aspectRatio = DEFAULT_ASPECT_RATIO;
     let imageSize = DEFAULT_IMAGE_SIZE;
     let aspectFit = DEFAULT_ASPECT_FIT;
+    let geminiApiKey = '';
+    let variations = 1;
 
     const parts = request.parts();
     for await (const part of parts) {
@@ -66,6 +72,10 @@ export async function stagingRoutes(app) {
         else if (part.fieldname === 'aspect_ratio' && part.value) aspectRatio = part.value;
         else if (part.fieldname === 'image_size' && part.value) imageSize = part.value;
         else if (part.fieldname === 'aspect_fit' && part.value) aspectFit = part.value;
+        // User-supplied Gemini key (optional). Never logged or persisted.
+        else if (part.fieldname === 'gemini_api_key') geminiApiKey = (part.value || '').trim();
+        else if (part.fieldname === 'variations' && part.value)
+          variations = Number.parseInt(part.value, 10);
       }
     }
 
@@ -104,6 +114,17 @@ export async function stagingRoutes(app) {
     if (!isValidAspectFit(aspectFit)) {
       return reply.code(422).send({ error: `invalid aspect_fit: ${aspectFit}` });
     }
+    if (!Number.isInteger(variations) || variations < 1 || variations > MAX_VARIATIONS) {
+      return reply
+        .code(422)
+        .send({ error: `variations must be an integer between 1 and ${MAX_VARIATIONS}` });
+    }
+    // A Gemini key is required: caller-supplied (BYOK) or the server's own.
+    if (!geminiApiKey && !env.gemini.enabled) {
+      return reply
+        .code(422)
+        .send({ error: 'Gemini API key required: paste your own key to continue' });
+    }
 
     // Persist input image.
     const inExt = extForMime(imageMime);
@@ -113,27 +134,51 @@ export async function stagingRoutes(app) {
     const parameters = await StagingParameter.find({ active: true }).sort({ order: 1 });
     const { composedPrompt } = composePrompt(parameters, selections, extraPrompt, mode);
 
-    try {
-      const imageConfig = resolveImageConfig({ imageSizeId: imageSize });
+    const imageConfig = resolveImageConfig({ imageSizeId: imageSize });
+    const ratioValue = aspectRatioValue(aspectRatio);
+
+    // Produce one staged variation: generate → adjust aspect ratio → save.
+    // The model is stochastic, so calling this N times yields distinct results.
+    const runVariation = async () => {
+      // Accumulate token usage across every model call this variation makes
+      // (the base generation + the second pass when expanding with AI).
+      const usage = { promptTokens: 0, outputTokens: 0, totalTokens: 0 };
+      const track = (u) => {
+        if (!u) return;
+        usage.promptTokens += u.promptTokens;
+        usage.outputTokens += u.outputTokens;
+        usage.totalTokens += u.totalTokens;
+      };
+
       const result = await generateStaging({
         imageBuffer,
         mime: imageMime,
         prompt: composedPrompt,
         imageConfig,
+        apiKey: geminiApiKey,
       });
+      track(result.usage);
 
       // Adjust the aspect ratio. crop/pad are deterministic (the model never
       // invents content); 'ai' outpaints — the model extends the scene to fill
       // the new frame with a second generation call.
-      const ratioValue = aspectRatioValue(aspectRatio);
       const framed =
         aspectFit === 'ai'
           ? await expandWithAi({
               buffer: result.buffer,
               mime: result.mime,
               ratio: ratioValue,
-              generate: (buf, m, prompt) =>
-                generateStaging({ imageBuffer: buf, mime: m, prompt, imageConfig }),
+              generate: async (buf, m, prompt) => {
+                const r = await generateStaging({
+                  imageBuffer: buf,
+                  mime: m,
+                  prompt,
+                  imageConfig,
+                  apiKey: geminiApiKey,
+                });
+                track(r.usage);
+                return r;
+              },
             })
           : await reframe({
               buffer: result.buffer,
@@ -144,11 +189,41 @@ export async function stagingRoutes(app) {
 
       const outExt = extForMime(framed.mime);
       const output = await saveBuffer(framed.buffer, outExt, 'out');
+      return { url: output.url, model: result.model, usage };
+    };
+
+    try {
+      // Generate all variations concurrently; partial success is acceptable.
+      const settled = await Promise.allSettled(
+        Array.from({ length: variations }, () => runVariation())
+      );
+      const outputs = settled
+        .filter((s) => s.status === 'fulfilled')
+        .map((s) => s.value);
+
+      // Every variation failed → surface the first error via the catch below.
+      if (outputs.length === 0) {
+        throw settled.find((s) => s.status === 'rejected').reason;
+      }
+
+      const urls = outputs.map((o) => o.url);
+      const model = outputs[0].model;
       const processingMs = Date.now() - started;
+
+      // Sum token usage across all variations.
+      const usage = outputs.reduce(
+        (acc, o) => ({
+          prompt_tokens: acc.prompt_tokens + (o.usage?.promptTokens ?? 0),
+          output_tokens: acc.output_tokens + (o.usage?.outputTokens ?? 0),
+          total_tokens: acc.total_tokens + (o.usage?.totalTokens ?? 0),
+        }),
+        { prompt_tokens: 0, output_tokens: 0, total_tokens: 0 }
+      );
 
       await StagingJob.create({
         input_image_url: input.url,
-        output_image_url: output.url,
+        output_image_url: urls[0],
+        output_image_urls: urls,
         mode,
         selections,
         extra_prompt: extraPrompt,
@@ -156,20 +231,24 @@ export async function stagingRoutes(app) {
         aspect_ratio: aspectRatio,
         aspect_fit: aspectFit,
         image_size: imageSize,
-        model: result.model,
+        model,
         processing_ms: processingMs,
+        usage,
         status: 'done',
       });
 
       return {
-        result_image_url: output.url,
+        result_image_url: urls[0], // back-compat: first variation
+        variations: urls.map((url) => ({ result_image_url: url })),
+        requested_variations: variations,
         composed_prompt: composedPrompt,
         mode,
         aspect_ratio: aspectRatio,
         aspect_fit: aspectFit,
         image_size: imageSize,
-        model: result.model,
+        model,
         processing_ms: processingMs,
+        usage,
       };
     } catch (err) {
       await StagingJob.create({
@@ -185,9 +264,18 @@ export async function stagingRoutes(app) {
         error: err.message,
       });
 
+      if (err instanceof MissingApiKeyError) {
+        return reply
+          .code(422)
+          .send({ error: 'Gemini API key required: paste your own key to continue' });
+      }
       if (err instanceof ProviderError) {
         request.log.error({ err: err.cause ?? err }, 'provider failure');
-        return reply.code(502).send({ error: 'image provider failed' });
+        return reply.code(502).send({
+          error: geminiApiKey
+            ? 'image provider failed — check that your Gemini API key is valid'
+            : 'image provider failed',
+        });
       }
       throw err;
     }

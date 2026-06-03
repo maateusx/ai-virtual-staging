@@ -1,11 +1,23 @@
 import { create } from 'zustand';
 import { api } from '@/lib/api';
 
+// User's own Gemini key is kept in localStorage so they don't re-paste it
+// every session. It is sent per-request and never stored server-side.
+const API_KEY_STORAGE = 'decorar:gemini_api_key';
+const loadApiKey = () => {
+  try {
+    return localStorage.getItem(API_KEY_STORAGE) || '';
+  } catch {
+    return '';
+  }
+};
+
 // State for the processing (staging) screen.
 export const useStagingStore = create((set, get) => ({
   parameters: [],
   outputConfig: null, // { aspect_ratios, default_aspect_ratio, image_sizes, default_image_size }
   modes: [], // [{ id, label }]
+  serverHasKey: true, // does the backend have its own Gemini key? (BYOK required when false)
   loadingConfig: false,
 
   imageFile: null,
@@ -16,6 +28,8 @@ export const useStagingStore = create((set, get) => ({
   aspectRatio: null,
   aspectFit: null,
   imageSize: null,
+  variations: 1, // how many options to generate per request (1..4)
+  apiKey: loadApiKey(),
 
   processing: false,
   result: null, // { result_image_url, composed_prompt, model, processing_ms }
@@ -24,11 +38,13 @@ export const useStagingStore = create((set, get) => ({
   loadConfig: async () => {
     set({ loadingConfig: true, error: null });
     try {
-      const { parameters, output, modes, default_mode } = await api.getConfig();
+      const { parameters, output, modes, default_mode, server_has_key } =
+        await api.getConfig();
       set((s) => ({
         parameters,
         outputConfig: output,
         modes: modes ?? [],
+        serverHasKey: server_has_key ?? true,
         // Initialise selectors from backend defaults (don't clobber user choice).
         mode: s.mode ?? default_mode ?? 'furnish',
         aspectRatio: s.aspectRatio ?? output?.default_aspect_ratio ?? null,
@@ -63,6 +79,17 @@ export const useStagingStore = create((set, get) => ({
   setAspectRatio: (aspectRatio) => set({ aspectRatio }),
   setAspectFit: (aspectFit) => set({ aspectFit }),
   setImageSize: (imageSize) => set({ imageSize }),
+  setVariations: (variations) => set({ variations }),
+
+  setApiKey: (apiKey) => {
+    try {
+      if (apiKey) localStorage.setItem(API_KEY_STORAGE, apiKey);
+      else localStorage.removeItem(API_KEY_STORAGE);
+    } catch {
+      // ignore storage failures (private mode, etc.)
+    }
+    set({ apiKey });
+  },
 
   reset: () => {
     const prev = get().imagePreview;
@@ -82,8 +109,17 @@ export const useStagingStore = create((set, get) => ({
   },
 
   process: async () => {
-    const { imageFile, mode, selections, extraPrompt, aspectRatio, aspectFit, imageSize } =
-      get();
+    const {
+      imageFile,
+      mode,
+      selections,
+      extraPrompt,
+      aspectRatio,
+      aspectFit,
+      imageSize,
+      apiKey,
+      variations,
+    } = get();
     if (!imageFile) {
       set({ error: 'Envie uma imagem primeiro.' });
       return;
@@ -99,6 +135,8 @@ export const useStagingStore = create((set, get) => ({
         aspectRatio,
         aspectFit,
         imageSize,
+        apiKey,
+        variations,
       });
       set({ result });
     } catch (err) {

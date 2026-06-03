@@ -1,12 +1,12 @@
 // Image-to-image provider abstraction.
 //
-// Real mode: calls Google's Gemini image model (a.k.a. "Nano Banana",
+// Calls Google's Gemini image model (a.k.a. "Nano Banana",
 // gemini-2.5-flash-image) directly via @google/genai. The input image is sent
 // inline (base64) together with the composed prompt; the edited image comes
 // back inline in the response parts.
 //
-// Mock mode (no GEMINI_API_KEY): returns the original image buffer unchanged,
-// so the whole flow is runnable locally without credentials.
+// A key is required: the caller may supply their own (BYOK), otherwise the
+// server key is used. When neither exists, MissingApiKeyError is thrown.
 
 import { env } from '../config/env.js';
 
@@ -18,12 +18,24 @@ class ProviderError extends Error {
   }
 }
 
-export { ProviderError };
+// Thrown when no Gemini key is available (caller-supplied or server). This is a
+// client-fixable condition, so the route maps it to a 4xx rather than a 502.
+class MissingApiKeyError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'MissingApiKeyError';
+  }
+}
+
+export { ProviderError, MissingApiKeyError };
 
 let _genai = null;
-async function getClient() {
-  if (_genai) return _genai;
+async function getClient(apiKey) {
   const { GoogleGenAI } = await import('@google/genai');
+  // A user-supplied key builds a throwaway client (never cached, so one user's
+  // key can't leak into another request). The server key is cached.
+  if (apiKey) return new GoogleGenAI({ apiKey });
+  if (_genai) return _genai;
   _genai = new GoogleGenAI({ apiKey: env.gemini.key });
   return _genai;
 }
@@ -36,16 +48,19 @@ async function getClient() {
  * @param {string} args.prompt       composed instruction
  * @param {{ aspectRatio?: string, imageSize?: string }} [args.imageConfig]
  *   optional Gemini output controls (aspect ratio / resolution)
- * @returns {Promise<{ buffer: Buffer, mime: string, model: string }>}
+ * @param {string} [args.apiKey]  caller-supplied Gemini key (BYOK); when present
+ *   it takes precedence over the server key
+ * @returns {Promise<{ buffer: Buffer, mime: string, model: string,
+ *   usage: ({ promptTokens: number, outputTokens: number, totalTokens: number }|null) }>}
  */
-export async function generateStaging({ imageBuffer, mime, prompt, imageConfig }) {
-  if (!env.gemini.enabled) {
-    // Mock: echo the input image back (output controls are ignored).
-    return { buffer: imageBuffer, mime, model: 'mock' };
+export async function generateStaging({ imageBuffer, mime, prompt, imageConfig, apiKey }) {
+  const userKey = apiKey?.trim();
+  if (!userKey && !env.gemini.enabled) {
+    throw new MissingApiKeyError('No Gemini API key available');
   }
 
   try {
-    const ai = await getClient();
+    const ai = await getClient(userKey);
 
     const response = await ai.models.generateContent({
       model: env.gemini.model,
@@ -71,7 +86,17 @@ export async function generateStaging({ imageBuffer, mime, prompt, imageConfig }
     const buffer = Buffer.from(imagePart.inlineData.data, 'base64');
     const outMime = imagePart.inlineData.mimeType || 'image/png';
 
-    return { buffer, mime: outMime, model: env.gemini.model };
+    // Token usage (includes image tokens). May be absent on some responses.
+    const u = response?.usageMetadata;
+    const usage = u
+      ? {
+          promptTokens: u.promptTokenCount ?? 0,
+          outputTokens: u.candidatesTokenCount ?? 0,
+          totalTokens: u.totalTokenCount ?? 0,
+        }
+      : null;
+
+    return { buffer, mime: outMime, model: env.gemini.model, usage };
   } catch (err) {
     if (err instanceof ProviderError) throw err;
     throw new ProviderError('Image provider call failed', err);

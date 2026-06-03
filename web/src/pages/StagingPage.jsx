@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Loader2, Download, Wand2, ChevronDown } from 'lucide-react';
+import { Loader2, Download, Wand2, ChevronDown, Eye, EyeOff, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { useStagingStore } from '@/store/stagingStore';
 import { ImageDropzone } from '@/components/ImageDropzone';
@@ -8,6 +8,7 @@ import { BeforeAfter } from '@/components/BeforeAfter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -31,6 +32,9 @@ export function StagingPage() {
     setSelection,
     extraPrompt,
     setExtraPrompt,
+    apiKey,
+    setApiKey,
+    serverHasKey,
     outputConfig,
     aspectRatio,
     setAspectRatio,
@@ -38,6 +42,8 @@ export function StagingPage() {
     setAspectFit,
     imageSize,
     setImageSize,
+    variations,
+    setVariations,
     process,
     processing,
     result,
@@ -46,6 +52,19 @@ export function StagingPage() {
   } = useStagingStore();
 
   const [showPrompt, setShowPrompt] = useState(false);
+  const [showKey, setShowKey] = useState(false);
+  const [selectedVariation, setSelectedVariation] = useState(0);
+
+  // Result variations (falls back to the single-image shape for safety).
+  const resultVariations = result
+    ? (result.variations ?? [{ result_image_url: result.result_image_url }])
+    : [];
+  const selectedUrl = resultVariations[selectedVariation]?.result_image_url;
+
+  // Reset the selection whenever a new result arrives.
+  useEffect(() => {
+    setSelectedVariation(0);
+  }, [result]);
 
   // Short helper text shown under the mode toggle.
   const MODE_HINTS = {
@@ -54,6 +73,9 @@ export function StagingPage() {
     declutter: 'Mantém apenas o mínimo dos móveis originais, removendo o excesso.',
   };
   const isFurnish = mode === 'furnish';
+  // When the backend has no key of its own, the user must bring their own (BYOK).
+  const keyRequired = !serverHasKey;
+  const missingKey = keyRequired && !apiKey.trim();
 
   useEffect(() => {
     loadConfig();
@@ -65,7 +87,7 @@ export function StagingPage() {
 
   const download = async () => {
     try {
-      const res = await fetch(result.result_image_url);
+      const res = await fetch(selectedUrl);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -103,10 +125,46 @@ export function StagingPage() {
             disabled={processing}
           />
 
-          {result && imagePreview && (
+          {result && imagePreview && selectedUrl && (
             <div className="animate-fade-in space-y-4">
-              <h2 className="text-xl font-semibold">Resultado</h2>
-              <BeforeAfter before={imagePreview} after={result.result_image_url} />
+              <h2 className="text-xl font-semibold">
+                Resultado
+                {resultVariations.length > 1 && (
+                  <span className="ml-2 text-sm font-normal text-muted-foreground">
+                    {resultVariations.length} variações
+                  </span>
+                )}
+              </h2>
+              <BeforeAfter before={imagePreview} after={selectedUrl} />
+
+              {resultVariations.length > 1 && (
+                <div className="grid grid-cols-4 gap-2">
+                  {resultVariations.map((v, i) => (
+                    <button
+                      key={v.result_image_url}
+                      type="button"
+                      onClick={() => setSelectedVariation(i)}
+                      className={`relative overflow-hidden rounded-md border-2 transition-colors ${
+                        i === selectedVariation
+                          ? 'border-primary'
+                          : 'border-transparent hover:border-border'
+                      }`}
+                      aria-label={`Variação ${i + 1}`}
+                      aria-pressed={i === selectedVariation}
+                    >
+                      <img
+                        src={v.result_image_url}
+                        alt={`Variação ${i + 1}`}
+                        className="aspect-square w-full object-cover"
+                      />
+                      <span className="absolute left-1 top-1 rounded bg-ink/70 px-1.5 text-xs text-white">
+                        {i + 1}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <div className="flex flex-wrap items-center gap-3">
                 <Button onClick={download}>
                   <Download className="h-4 w-4" /> Baixar imagem
@@ -118,6 +176,9 @@ export function StagingPage() {
                   {result.model} · {(result.processing_ms / 1000).toFixed(1)}s
                   {result.aspect_ratio ? ` · ${result.aspect_ratio}` : ''}
                   {result.image_size ? ` · ${result.image_size}` : ''}
+                  {result.usage?.total_tokens
+                    ? ` · ${result.usage.total_tokens.toLocaleString('pt-BR')} tokens`
+                    : ''}
                 </span>
               </div>
 
@@ -247,6 +308,31 @@ export function StagingPage() {
               )}
 
               <div className="space-y-2">
+                <Label>Variações</Label>
+                <Select
+                  value={String(variations)}
+                  onValueChange={(v) => setVariations(Number(v))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4].map((n) => (
+                      <SelectItem key={n} value={String(n)}>
+                        {n === 1 ? '1 imagem' : `${n} imagens`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {variations > 1 && (
+                  <p className="text-sm text-muted-foreground">
+                    Gera {variations} opções de uma vez para você escolher — consome{' '}
+                    {variations}× a cota/custo.
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
                 <Label>Prompt adicional (opcional)</Label>
                 <Textarea
                   placeholder={
@@ -258,13 +344,60 @@ export function StagingPage() {
                   onChange={(e) => setExtraPrompt(e.target.value)}
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <KeyRound className="h-4 w-4" /> Chave da API Gemini{' '}
+                  {keyRequired ? (
+                    <span className="text-destructive">*</span>
+                  ) : (
+                    <span className="font-normal text-muted-foreground">(opcional)</span>
+                  )}
+                </Label>
+                <div className="relative">
+                  <Input
+                    type={showKey ? 'text' : 'password'}
+                    autoComplete="off"
+                    spellCheck={false}
+                    placeholder="AIza…"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    aria-invalid={missingKey}
+                    className={`pr-11 ${missingKey ? 'border-destructive' : ''}`}
+                  />
+                  {apiKey && (
+                    <button
+                      type="button"
+                      onClick={() => setShowKey((v) => !v)}
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                      aria-label={showKey ? 'Ocultar chave' : 'Mostrar chave'}
+                    >
+                      {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {keyRequired
+                    ? 'Este servidor não tem chave própria — cole sua chave do Gemini para processar.'
+                    : 'Cole sua chave para usar sua própria cota do Gemini (opcional).'}{' '}
+                  Fica salva apenas neste navegador e é enviada só para processar a imagem.{' '}
+                  <a
+                    href="https://aistudio.google.com/apikey"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline hover:text-foreground"
+                  >
+                    Obter uma chave
+                  </a>
+                </p>
+              </div>
             </CardContent>
           </Card>
 
           <Button
             size="lg"
             className="w-full"
-            disabled={!imageFile || processing}
+            disabled={!imageFile || processing || missingKey}
             onClick={process}
           >
             {processing ? (
