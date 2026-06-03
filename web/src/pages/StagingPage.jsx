@@ -9,6 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export function StagingPage() {
   const {
@@ -17,10 +24,20 @@ export function StagingPage() {
     imagePreview,
     imageFile,
     setImage,
+    modes,
+    mode,
+    setMode,
     selections,
     setSelection,
     extraPrompt,
     setExtraPrompt,
+    outputConfig,
+    aspectRatio,
+    setAspectRatio,
+    aspectFit,
+    setAspectFit,
+    imageSize,
+    setImageSize,
     process,
     processing,
     result,
@@ -29,6 +46,14 @@ export function StagingPage() {
   } = useStagingStore();
 
   const [showPrompt, setShowPrompt] = useState(false);
+
+  // Short helper text shown under the mode toggle.
+  const MODE_HINTS = {
+    furnish: 'Adiciona móveis e decoração ao ambiente vazio.',
+    empty: 'Remove todos os móveis e decoração, deixando o ambiente vazio e limpo.',
+    declutter: 'Mantém apenas o mínimo dos móveis originais, removendo o excesso.',
+  };
+  const isFurnish = mode === 'furnish';
 
   useEffect(() => {
     loadConfig();
@@ -57,11 +82,14 @@ export function StagingPage() {
     <div className="mx-auto max-w-6xl px-6 py-12">
       <div className="mb-10 max-w-2xl">
         <h1 className="font-display text-4xl font-semibold leading-tight">
-          Mobilie ambientes vazios com IA
+          {isFurnish
+            ? 'Mobilie ambientes vazios com IA'
+            : 'Esvazie ambientes com IA'}
         </h1>
         <p className="mt-3 text-lg text-muted-foreground">
-          Envie a foto de um cômodo vazio, escolha o estilo e receba o ambiente
-          mobiliado — preservando paredes, janelas e perspectiva.
+          {isFurnish
+            ? 'Envie a foto de um cômodo vazio, escolha o estilo e receba o ambiente mobiliado — preservando paredes, janelas e perspectiva.'
+            : 'Envie a foto de um cômodo e remova os móveis — preservando paredes, janelas e perspectiva.'}
         </p>
       </div>
 
@@ -88,6 +116,8 @@ export function StagingPage() {
                 </Button>
                 <span className="text-sm text-muted-foreground">
                   {result.model} · {(result.processing_ms / 1000).toFixed(1)}s
+                  {result.aspect_ratio ? ` · ${result.aspect_ratio}` : ''}
+                  {result.image_size ? ` · ${result.image_size}` : ''}
                 </span>
               </div>
 
@@ -115,25 +145,115 @@ export function StagingPage() {
         <div className="space-y-6">
           <Card>
             <CardContent className="space-y-5 p-6">
-              {parameters.length === 0 && (
+              {modes.length > 0 && (
+                <div className="space-y-2">
+                  <Label>O que fazer com o ambiente</Label>
+                  <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
+                    {modes.map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setMode(m.id)}
+                        disabled={processing}
+                        className={`rounded-md px-2 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 ${
+                          mode === m.id
+                            ? 'bg-background text-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-sm text-muted-foreground">{MODE_HINTS[mode]}</p>
+                </div>
+              )}
+
+              {isFurnish && parameters.length === 0 && (
                 <p className="text-sm text-muted-foreground">
                   Nenhum parâmetro configurado ainda. Vá em{' '}
                   <span className="font-medium">Configuração</span>.
                 </p>
               )}
-              {parameters.map((p) => (
-                <ParameterField
-                  key={p.id}
-                  parameter={p}
-                  value={selections[p.id]}
-                  onChange={(v) => setSelection(p.id, v)}
-                />
-              ))}
+              {isFurnish &&
+                parameters.map((p) => (
+                  <ParameterField
+                    key={p.id}
+                    parameter={p}
+                    value={selections[p.id]}
+                    onChange={(v) => setSelection(p.id, v)}
+                  />
+                ))}
+
+              {outputConfig && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Proporção da saída</Label>
+                    <Select value={aspectRatio ?? ''} onValueChange={setAspectRatio}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {outputConfig.aspect_ratios.map((opt) => (
+                          <SelectItem key={opt.id} value={opt.id}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {aspectRatio && aspectRatio !== 'original' && (
+                    <div className="space-y-2">
+                      <Label>Ajuste de proporção</Label>
+                      <Select value={aspectFit ?? ''} onValueChange={setAspectFit}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {outputConfig.aspect_fits.map((opt) => (
+                            <SelectItem key={opt.id} value={opt.id}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-sm text-muted-foreground">
+                        {aspectFit === 'ai'
+                          ? 'A IA expande a cena para preencher a nova proporção — gera o ambiente ao redor, sem cortar nem adicionar barras (gera uma segunda imagem, leva mais tempo).'
+                          : aspectFit === 'pad'
+                            ? 'Mantém a imagem inteira e adiciona barras — sem cortar nem inventar nada.'
+                            : 'Recorta as bordas para a nova proporção, preservando a geometria real.'}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label>Resolução</Label>
+                    <Select value={imageSize ?? ''} onValueChange={setImageSize}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {outputConfig.image_sizes.map((opt) => (
+                          <SelectItem key={opt.id} value={opt.id}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
 
               <div className="space-y-2">
                 <Label>Prompt adicional (opcional)</Label>
                 <Textarea
-                  placeholder="ex.: adicionar uma planta no canto"
+                  placeholder={
+                    isFurnish
+                      ? 'ex.: adicionar uma planta no canto'
+                      : 'ex.: remover também as cortinas'
+                  }
                   value={extraPrompt}
                   onChange={(e) => setExtraPrompt(e.target.value)}
                 />

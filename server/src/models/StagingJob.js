@@ -7,9 +7,13 @@ const jobSchema = new Schema(
   {
     input_image_url: { type: String, required: true },
     output_image_url: { type: String },
+    mode: { type: String, default: 'furnish' },
     selections: { type: Schema.Types.Mixed, default: {} },
     extra_prompt: { type: String, default: '' },
     composed_prompt: { type: String, default: '' },
+    aspect_ratio: { type: String },
+    aspect_fit: { type: String },
+    image_size: { type: String },
     model: { type: String },
     processing_ms: { type: Number },
     status: { type: String, enum: ['done', 'error'], required: true },

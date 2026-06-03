@@ -34,11 +34,13 @@ async function getClient() {
  * @param {Buffer} args.imageBuffer  raw input image bytes
  * @param {string} args.mime         input mime type
  * @param {string} args.prompt       composed instruction
+ * @param {{ aspectRatio?: string, imageSize?: string }} [args.imageConfig]
+ *   optional Gemini output controls (aspect ratio / resolution)
  * @returns {Promise<{ buffer: Buffer, mime: string, model: string }>}
  */
-export async function generateStaging({ imageBuffer, mime, prompt }) {
+export async function generateStaging({ imageBuffer, mime, prompt, imageConfig }) {
   if (!env.gemini.enabled) {
-    // Mock: echo the input image back.
+    // Mock: echo the input image back (output controls are ignored).
     return { buffer: imageBuffer, mime, model: 'mock' };
   }
 
@@ -51,6 +53,7 @@ export async function generateStaging({ imageBuffer, mime, prompt }) {
         { text: prompt },
         { inlineData: { mimeType: mime, data: imageBuffer.toString('base64') } },
       ],
+      ...(imageConfig ? { config: { imageConfig } } : {}),
     });
 
     // Find the first image part in the response.

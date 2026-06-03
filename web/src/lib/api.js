@@ -21,11 +21,15 @@ export const api = {
   // ---- Public ----
   getConfig: () => fetch(`${API_URL}/v1/staging/config`).then(handle),
 
-  process: ({ image, selections, extraPrompt }) => {
+  process: ({ image, selections, extraPrompt, mode, aspectRatio, aspectFit, imageSize }) => {
     const fd = new FormData();
     fd.append('image', image);
     fd.append('selections', JSON.stringify(selections));
     if (extraPrompt) fd.append('extra_prompt', extraPrompt);
+    if (mode) fd.append('mode', mode);
+    if (aspectRatio) fd.append('aspect_ratio', aspectRatio);
+    if (aspectFit) fd.append('aspect_fit', aspectFit);
+    if (imageSize) fd.append('image_size', imageSize);
     return fetch(`${API_URL}/v1/staging`, { method: 'POST', body: fd }).then(handle);
   },
 

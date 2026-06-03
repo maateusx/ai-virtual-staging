@@ -1,10 +1,16 @@
 # decorar.ai — Virtual Staging (MVP síncrono)
 
-Ferramenta de *virtual staging*: o usuário envia a foto de um cômodo vazio,
-escolhe parâmetros (estilo, tipo de cômodo, densidade de mobília…) e recebe a
-imagem mobiliada. Os parâmetros **não são fixos em código** — são configurados
-numa tela de admin e cada opção carrega um *fragmento de prompt* concatenado na
-instrução final enviada ao modelo de IA.
+Ferramenta de *virtual staging*: o usuário envia a foto de um cômodo, escolhe um
+**modo** (mobiliar, esvaziar ou minimizar), parâmetros (estilo, tipo de cômodo,
+densidade de mobília…) e o **formato de saída** (proporção e resolução), e recebe
+a imagem editada. Os parâmetros de estilo **não são fixos em código** — são
+configurados numa tela de admin e cada opção carrega um *fragmento de prompt*
+concatenado na instrução final enviada ao modelo de IA.
+
+**Modos:** `furnish` (adiciona móveis a um cômodo vazio), `empty` (remove tudo,
+deixando vazio) e `declutter` (remove o excesso, mantendo o mínimo). **Saída:**
+proporção (16:9, 1:1, 3:4, 9:16, 4:3 ou original) atingida por recorte, barras ou
+*outpaint* com IA, e resolução 1K/2K/4K.
 
 Veja a especificação completa em [`docs/spec.md`](docs/spec.md) e o design system
 em [`docs/design-system.md`](docs/design-system.md).
@@ -14,6 +20,7 @@ em [`docs/design-system.md`](docs/design-system.md).
 - **Backend** (`server/`): Node.js + Fastify + Mongoose (MongoDB)
 - **Frontend** (`web/`): React + Vite + Tailwind + shadcn-style UI + Zustand
 - **IA**: Google Gemini ("Nano Banana", `gemini-3.1-flash-image`) chamado direto via `@google/genai` — com *fallback* mock quando `GEMINI_API_KEY` não está definido
+- **Imagem**: `sharp` (libvips) para reframe determinístico (recorte / barras) da proporção de saída
 - **Storage**: disco local servido pelo Fastify (`/uploads`), abstraído para troca por S3
 
 ## Pré-requisitos
@@ -46,8 +53,10 @@ server/src
   db/                    conexão Mongoose
   models/                StagingParameter (com opções embutidas), StagingJob
   services/
-    promptBuilder.js     monta o prompt final (spec §6)
+    promptBuilder.js     monta o prompt final por modo (spec §6)
     imageProvider.js     Gemini (Nano Banana) + fallback mock
+    outputFormats.js     presets/validação de proporção, resolução e ajuste
+    reframe.js           reframe com sharp (crop/pad) + outpaint com IA
     storage.js           disco local → URL pública
   routes/
     staging.js           GET /v1/staging/config · POST /v1/staging
@@ -63,8 +72,8 @@ web/src
 
 | Método | Rota | Descrição |
 |---|---|---|
-| `GET` | `/v1/staging/config` | Parâmetros ativos (sem `prompt_fragment`) |
-| `POST` | `/v1/staging` | Processa imagem (multipart) — síncrono |
+| `GET` | `/v1/staging/config` | Parâmetros ativos (sem `prompt_fragment`) + modos + formatos de saída |
+| `POST` | `/v1/staging` | Processa imagem (multipart) — síncrono. Campos: `image`, `selections`, `extra_prompt`, `mode`, `aspect_ratio`, `aspect_fit`, `image_size` |
 | `GET` | `/v1/admin/parameters` | Lista parâmetros (detalhe completo) |
 | `POST` | `/v1/admin/parameters` | Cria parâmetro |
 | `PATCH`/`DELETE` | `/v1/admin/parameters/:id` | Edita/remove parâmetro |
@@ -76,5 +85,5 @@ web/src
 
 ## Fora desta versão (fases futuras)
 
-Fila/processamento assíncrono, webhook, remoção de móveis (imóvel ocupado),
-máscara automática / inpaint, multi-tenant e storage em S3.
+Fila/processamento assíncrono, webhook, máscara automática / inpaint mascarado,
+consistência multi-view, multi-tenant e storage em S3.
