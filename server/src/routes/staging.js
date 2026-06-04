@@ -2,11 +2,14 @@ import { StagingParameter } from '../models/StagingParameter.js';
 import { StagingJob } from '../models/StagingJob.js';
 import {
   composePrompt,
+  composeEditPrompt,
   isValidMode,
+  EDIT_MODE,
   STAGING_MODES,
   DEFAULT_MODE,
 } from '../services/promptBuilder.js';
 import { generateStaging, ProviderError, MissingApiKeyError } from '../services/imageProvider.js';
+import { compositeEdit } from '../services/inpaint.js';
 import { env } from '../config/env.js';
 import { saveBuffer, extForMime } from '../services/storage.js';
 import {
@@ -44,9 +47,11 @@ export async function stagingRoutes(app) {
   app.post('/v1/staging', async (request, reply) => {
     const started = Date.now();
 
-    // Parse multipart: one image file + text fields.
+    // Parse multipart: the image (+ optional mask) file + text fields.
     let imageBuffer = null;
     let imageMime = null;
+    let maskBuffer = null;
+    let maskMime = null;
     let selectionsRaw = null;
     let extraPrompt = '';
     let mode = DEFAULT_MODE;
@@ -59,12 +64,15 @@ export async function stagingRoutes(app) {
     const parts = request.parts();
     for await (const part of parts) {
       if (part.type === 'file') {
-        if (part.fieldname !== 'image') {
+        if (part.fieldname === 'image') {
+          imageMime = part.mimetype;
+          imageBuffer = await part.toBuffer();
+        } else if (part.fieldname === 'mask') {
+          maskMime = part.mimetype;
+          maskBuffer = await part.toBuffer();
+        } else {
           part.file.resume();
-          continue;
         }
-        imageMime = part.mimetype;
-        imageBuffer = await part.toBuffer();
       } else {
         if (part.fieldname === 'selections') selectionsRaw = part.value;
         else if (part.fieldname === 'extra_prompt') extraPrompt = part.value || '';
@@ -126,13 +134,44 @@ export async function stagingRoutes(app) {
         .send({ error: 'Gemini API key required: paste your own key to continue' });
     }
 
-    // Persist input image.
+    const isEdit = mode === EDIT_MODE;
+
+    // Localized-edit mode requires a painted mask + a free-text instruction.
+    if (isEdit) {
+      if (!maskBuffer) {
+        return reply.code(422).send({ error: 'mask is required for edit mode' });
+      }
+      if (!ALLOWED_MIME.has(maskMime)) {
+        return reply.code(422).send({ error: `unsupported mask type: ${maskMime}` });
+      }
+      if (maskBuffer.length > MAX_IMAGE_BYTES) {
+        return reply.code(422).send({ error: 'mask too large (max 15MB)' });
+      }
+      if (!extraPrompt.trim()) {
+        return reply
+          .code(422)
+          .send({ error: 'extra_prompt (edit instruction) is required for edit mode' });
+      }
+    }
+
+    // Persist input image (and the mask, when editing).
     const inExt = extForMime(imageMime);
     const input = await saveBuffer(imageBuffer, inExt, 'in');
+    let maskUrl = null;
+    if (isEdit) {
+      const maskSaved = await saveBuffer(maskBuffer, extForMime(maskMime), 'in');
+      maskUrl = maskSaved.url;
+    }
 
-    // Resolve fragments + compose prompt.
-    const parameters = await StagingParameter.find({ active: true }).sort({ order: 1 });
-    const { composedPrompt } = composePrompt(parameters, selections, extraPrompt, mode);
+    // Resolve fragments + compose prompt. Edit mode is mask-driven and skips the
+    // style parameters entirely.
+    let composedPrompt;
+    if (isEdit) {
+      composedPrompt = composeEditPrompt(extraPrompt).composedPrompt;
+    } else {
+      const parameters = await StagingParameter.find({ active: true }).sort({ order: 1 });
+      composedPrompt = composePrompt(parameters, selections, extraPrompt, mode).composedPrompt;
+    }
 
     const imageConfig = resolveImageConfig({ imageSizeId: imageSize });
     const ratioValue = aspectRatioValue(aspectRatio);
@@ -192,10 +231,34 @@ export async function stagingRoutes(app) {
       return { url: output.url, model: result.model, usage };
     };
 
+    // Localized edit: send photo + mask, then composite the result back over the
+    // original so everything outside the painted region stays identical. No
+    // aspect-ratio step — the output keeps the original dimensions.
+    const runEditVariation = async () => {
+      const result = await generateStaging({
+        imageBuffer,
+        mime: imageMime,
+        prompt: composedPrompt,
+        maskBuffer,
+        maskMime,
+        apiKey: geminiApiKey,
+      });
+
+      const composited = await compositeEdit({
+        originalBuffer: imageBuffer,
+        editedBuffer: result.buffer,
+        maskBuffer,
+      });
+
+      const outExt = extForMime(composited.mime);
+      const output = await saveBuffer(composited.buffer, outExt, 'out');
+      return { url: output.url, model: result.model, usage: result.usage };
+    };
+
     try {
       // Generate all variations concurrently; partial success is acceptable.
       const settled = await Promise.allSettled(
-        Array.from({ length: variations }, () => runVariation())
+        Array.from({ length: variations }, () => (isEdit ? runEditVariation() : runVariation()))
       );
       const outputs = settled
         .filter((s) => s.status === 'fulfilled')
@@ -222,6 +285,7 @@ export async function stagingRoutes(app) {
 
       await StagingJob.create({
         input_image_url: input.url,
+        mask_image_url: maskUrl,
         output_image_url: urls[0],
         output_image_urls: urls,
         mode,
@@ -253,6 +317,7 @@ export async function stagingRoutes(app) {
     } catch (err) {
       await StagingJob.create({
         input_image_url: input.url,
+        mask_image_url: maskUrl,
         mode,
         selections,
         extra_prompt: extraPrompt,

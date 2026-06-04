@@ -46,6 +46,9 @@ async function getClient(apiKey) {
  * @param {Buffer} args.imageBuffer  raw input image bytes
  * @param {string} args.mime         input mime type
  * @param {string} args.prompt       composed instruction
+ * @param {Buffer} [args.maskBuffer]  optional black/white mask sent as a second
+ *   image (white = region to edit). Used by the localized-edit (inpaint) flow.
+ * @param {string} [args.maskMime]   mask mime type (defaults to image/png)
  * @param {{ aspectRatio?: string, imageSize?: string }} [args.imageConfig]
  *   optional Gemini output controls (aspect ratio / resolution)
  * @param {string} [args.apiKey]  caller-supplied Gemini key (BYOK); when present
@@ -53,7 +56,15 @@ async function getClient(apiKey) {
  * @returns {Promise<{ buffer: Buffer, mime: string, model: string,
  *   usage: ({ promptTokens: number, outputTokens: number, totalTokens: number }|null) }>}
  */
-export async function generateStaging({ imageBuffer, mime, prompt, imageConfig, apiKey }) {
+export async function generateStaging({
+  imageBuffer,
+  mime,
+  prompt,
+  maskBuffer,
+  maskMime,
+  imageConfig,
+  apiKey,
+}) {
   const userKey = apiKey?.trim();
   if (!userKey && !env.gemini.enabled) {
     throw new MissingApiKeyError('No Gemini API key available');
@@ -62,12 +73,21 @@ export async function generateStaging({ imageBuffer, mime, prompt, imageConfig, 
   try {
     const ai = await getClient(userKey);
 
+    // The photo comes first; an optional mask follows as a second image so the
+    // model knows which region the prompt's edit applies to.
+    const contents = [
+      { text: prompt },
+      { inlineData: { mimeType: mime, data: imageBuffer.toString('base64') } },
+    ];
+    if (maskBuffer) {
+      contents.push({
+        inlineData: { mimeType: maskMime || 'image/png', data: maskBuffer.toString('base64') },
+      });
+    }
+
     const response = await ai.models.generateContent({
       model: env.gemini.model,
-      contents: [
-        { text: prompt },
-        { inlineData: { mimeType: mime, data: imageBuffer.toString('base64') } },
-      ],
+      contents,
       ...(imageConfig ? { config: { imageConfig } } : {}),
     });
 

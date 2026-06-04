@@ -23,7 +23,8 @@ export async function buildApp() {
   await app.register(cors, { origin: env.webOrigin });
 
   await app.register(multipart, {
-    limits: { fileSize: 16 * 1024 * 1024, files: 1 },
+    // Two files: the photo plus an optional mask (localized-edit mode).
+    limits: { fileSize: 16 * 1024 * 1024, files: 2 },
   });
 
   // Serve uploaded/generated images.

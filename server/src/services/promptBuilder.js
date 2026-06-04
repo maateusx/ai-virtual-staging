@@ -54,14 +54,45 @@ export const STAGING_MODES = [
   { id: 'furnish', label: 'Mobiliar' },
   { id: 'empty', label: 'Esvaziar' },
   { id: 'declutter', label: 'Minimizar' },
+  { id: 'edit', label: 'Editar' },
 ];
+
+// Localized edit (inpaint) is a distinct flow: it has no style fragments and is
+// driven by a painted mask + a free-text instruction rather than a base
+// template, so it lives outside BASE_TEMPLATES.
+export const EDIT_MODE = 'edit';
 
 export const DEFAULT_MODE = 'furnish';
 
 const TAIL = 'Photorealistic, consistent lighting and shadows.';
 
 export function isValidMode(mode) {
-  return Object.prototype.hasOwnProperty.call(BASE_TEMPLATES, mode);
+  return mode === EDIT_MODE || Object.prototype.hasOwnProperty.call(BASE_TEMPLATES, mode);
+}
+
+/**
+ * Build the instruction for a masked, localized edit. The model receives the
+ * photo plus a black/white mask (white = the painted region); it must change
+ * only that region and leave the rest untouched. The server then composites the
+ * result back over the original so unmasked pixels are guaranteed identical
+ * (the model tends to subtly re-render the whole frame).
+ *
+ * @param {string} instruction  free-text description of the desired change
+ * @returns {{ composedPrompt: string }}
+ */
+export function composeEditPrompt(instruction) {
+  const change = (instruction || '').trim().replace(/\.$/, '');
+  const composedPrompt =
+    'You are given a photograph and, as a second image, a black-and-white mask. ' +
+    'The white area of the mask marks the only region of the photograph you may ' +
+    'change; the black area must stay exactly as in the original. Edit only the ' +
+    `white-masked region of the photograph to: ${change}. Keep everything ` +
+    'outside that region pixel-for-pixel identical to the original — same walls, ' +
+    'floor, ceiling, furniture, colors, lighting and perspective. Inside the ' +
+    'edited region, match the surrounding perspective, lighting direction, ' +
+    'shadows, color temperature, materials and grain so the change blends in ' +
+    `seamlessly with no visible mask edge. ${TAIL}`;
+  return { composedPrompt };
 }
 
 /**

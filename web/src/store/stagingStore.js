@@ -22,7 +22,8 @@ export const useStagingStore = create((set, get) => ({
 
   imageFile: null,
   imagePreview: null,
-  mode: 'furnish', // furnish | empty | declutter
+  maskFile: null, // painted mask PNG for localized-edit mode
+  mode: 'furnish', // furnish | empty | declutter | edit
   selections: {}, // parameterId -> optionId | [optionId]
   extraPrompt: '',
   aspectRatio: null,
@@ -64,12 +65,17 @@ export const useStagingStore = create((set, get) => ({
     set({
       imageFile: file,
       imagePreview: file ? URL.createObjectURL(file) : null,
+      maskFile: null, // a new photo invalidates any painted mask
       result: null,
       error: null,
     });
   },
 
-  setMode: (mode) => set({ mode }),
+  // Switching modes clears any painted mask (it only applies to the photo it
+  // was drawn on, in edit mode).
+  setMode: (mode) => set({ mode, maskFile: null }),
+
+  setMaskFile: (maskFile) => set({ maskFile }),
 
   setSelection: (parameterId, value) =>
     set((s) => ({ selections: { ...s.selections, [parameterId]: value } })),
@@ -98,6 +104,7 @@ export const useStagingStore = create((set, get) => ({
     set({
       imageFile: null,
       imagePreview: null,
+      maskFile: null,
       selections: {},
       extraPrompt: '',
       aspectRatio: outputConfig?.default_aspect_ratio ?? null,
@@ -111,6 +118,7 @@ export const useStagingStore = create((set, get) => ({
   process: async () => {
     const {
       imageFile,
+      maskFile,
       mode,
       selections,
       extraPrompt,
@@ -124,11 +132,21 @@ export const useStagingStore = create((set, get) => ({
       set({ error: 'Envie uma imagem primeiro.' });
       return;
     }
+    const isEdit = mode === 'edit';
+    if (isEdit && !maskFile) {
+      set({ error: 'Pinte a área que deseja alterar.' });
+      return;
+    }
+    if (isEdit && !extraPrompt.trim()) {
+      set({ error: 'Descreva o que mudar na área pintada.' });
+      return;
+    }
     // Style selections only apply when furnishing.
     set({ processing: true, error: null, result: null });
     try {
       const result = await api.process({
         image: imageFile,
+        mask: isEdit ? maskFile : undefined,
         mode,
         selections: mode === 'furnish' ? selections : {},
         extraPrompt,

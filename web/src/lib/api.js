@@ -23,6 +23,7 @@ export const api = {
 
   process: ({
     image,
+    mask,
     selections,
     extraPrompt,
     mode,
@@ -34,6 +35,7 @@ export const api = {
   }) => {
     const fd = new FormData();
     fd.append('image', image);
+    if (mask) fd.append('mask', mask);
     fd.append('selections', JSON.stringify(selections));
     if (extraPrompt) fd.append('extra_prompt', extraPrompt);
     if (mode) fd.append('mode', mode);

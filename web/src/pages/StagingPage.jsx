@@ -3,6 +3,7 @@ import { Loader2, Download, Wand2, ChevronDown, Eye, EyeOff, KeyRound } from 'lu
 import { toast } from 'sonner';
 import { useStagingStore } from '@/store/stagingStore';
 import { ImageDropzone } from '@/components/ImageDropzone';
+import { MaskCanvas } from '@/components/MaskCanvas';
 import { ParameterField } from '@/components/ParameterField';
 import { BeforeAfter } from '@/components/BeforeAfter';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,8 @@ export function StagingPage() {
     imagePreview,
     imageFile,
     setImage,
+    maskFile,
+    setMaskFile,
     modes,
     mode,
     setMode,
@@ -71,8 +74,10 @@ export function StagingPage() {
     furnish: 'Adiciona móveis e decoração ao ambiente vazio.',
     empty: 'Remove todos os móveis e decoração, deixando o ambiente vazio e limpo.',
     declutter: 'Mantém apenas o mínimo dos móveis originais, removendo o excesso.',
+    edit: 'Pinte uma área da foto e descreva a alteração — só ela muda, o resto fica intacto.',
   };
   const isFurnish = mode === 'furnish';
+  const isEdit = mode === 'edit';
   // When the backend has no key of its own, the user must bring their own (BYOK).
   const keyRequired = !serverHasKey;
   const missingKey = keyRequired && !apiKey.trim();
@@ -106,24 +111,37 @@ export function StagingPage() {
         <h1 className="font-display text-4xl font-semibold leading-tight">
           {isFurnish
             ? 'Mobilie ambientes vazios com IA'
-            : 'Esvazie ambientes com IA'}
+            : isEdit
+              ? 'Edite trechos da foto com IA'
+              : 'Esvazie ambientes com IA'}
         </h1>
         <p className="mt-3 text-lg text-muted-foreground">
           {isFurnish
             ? 'Envie a foto de um cômodo vazio, escolha o estilo e receba o ambiente mobiliado — preservando paredes, janelas e perspectiva.'
-            : 'Envie a foto de um cômodo e remova os móveis — preservando paredes, janelas e perspectiva.'}
+            : isEdit
+              ? 'Envie a foto, pinte a região que quer mudar e descreva a alteração — só a área marcada é editada, o resto fica idêntico.'
+              : 'Envie a foto de um cômodo e remova os móveis — preservando paredes, janelas e perspectiva.'}
         </p>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
         {/* Left: upload + result */}
         <div className="space-y-6">
-          <ImageDropzone
-            preview={imagePreview}
-            onSelect={setImage}
-            onClear={() => setImage(null)}
-            disabled={processing}
-          />
+          {isEdit && imagePreview && !result ? (
+            <MaskCanvas
+              src={imagePreview}
+              onChange={setMaskFile}
+              onClear={() => setImage(null)}
+              disabled={processing}
+            />
+          ) : (
+            <ImageDropzone
+              preview={imagePreview}
+              onSelect={setImage}
+              onClear={() => setImage(null)}
+              disabled={processing}
+            />
+          )}
 
           {result && imagePreview && selectedUrl && (
             <div className="animate-fade-in space-y-4">
@@ -209,7 +227,7 @@ export function StagingPage() {
               {modes.length > 0 && (
                 <div className="space-y-2">
                   <Label>O que fazer com o ambiente</Label>
-                  <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
+                  <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
                     {modes.map((m) => (
                       <button
                         key={m.id}
@@ -246,7 +264,7 @@ export function StagingPage() {
                   />
                 ))}
 
-              {outputConfig && (
+              {!isEdit && outputConfig && (
                 <>
                   <div className="space-y-2">
                     <Label>Proporção da saída</Label>
@@ -333,16 +351,33 @@ export function StagingPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Prompt adicional (opcional)</Label>
+                <Label>
+                  {isEdit ? (
+                    <>
+                      O que mudar <span className="text-destructive">*</span>
+                    </>
+                  ) : (
+                    'Prompt adicional (opcional)'
+                  )}
+                </Label>
                 <Textarea
                   placeholder={
-                    isFurnish
-                      ? 'ex.: adicionar uma planta no canto'
-                      : 'ex.: remover também as cortinas'
+                    isEdit
+                      ? 'ex.: troque o sofá por um de couro caramelo'
+                      : isFurnish
+                        ? 'ex.: adicionar uma planta no canto'
+                        : 'ex.: remover também as cortinas'
                   }
                   value={extraPrompt}
                   onChange={(e) => setExtraPrompt(e.target.value)}
+                  aria-invalid={isEdit && !extraPrompt.trim()}
+                  className={isEdit && !extraPrompt.trim() ? 'border-destructive' : ''}
                 />
+                {isEdit && (
+                  <p className="text-sm text-muted-foreground">
+                    Descreve a alteração para a área pintada na foto.
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -397,7 +432,12 @@ export function StagingPage() {
           <Button
             size="lg"
             className="w-full"
-            disabled={!imageFile || processing || missingKey}
+            disabled={
+              !imageFile ||
+              processing ||
+              missingKey ||
+              (isEdit && (!maskFile || !extraPrompt.trim()))
+            }
             onClick={process}
           >
             {processing ? (

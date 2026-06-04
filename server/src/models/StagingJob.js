@@ -10,6 +10,8 @@ const jobSchema = new Schema(
     output_image_url: { type: String },
     // All generated variations (1..N) for this request.
     output_image_urls: { type: [String], default: undefined },
+    // Painted mask for localized-edit (inpaint) requests.
+    mask_image_url: { type: String },
     mode: { type: String, default: 'furnish' },
     selections: { type: Schema.Types.Mixed, default: {} },
     extra_prompt: { type: String, default: '' },
