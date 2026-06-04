@@ -1,16 +1,23 @@
 # decorar.ai — Virtual Staging (MVP síncrono)
 
 Ferramenta de *virtual staging*: o usuário envia a foto de um cômodo, escolhe um
-**modo** (mobiliar, esvaziar ou minimizar), parâmetros (estilo, tipo de cômodo,
-densidade de mobília…) e o **formato de saída** (proporção e resolução), e recebe
-a imagem editada. Os parâmetros de estilo **não são fixos em código** — são
-configurados numa tela de admin e cada opção carrega um *fragmento de prompt*
-concatenado na instrução final enviada ao modelo de IA.
+**modo**, parâmetros (estilo, tipo de cômodo, densidade de mobília…) e o
+**formato de saída** (proporção e resolução), e recebe a imagem editada. Os
+parâmetros de estilo **não são fixos em código** — são configurados numa tela de
+admin e cada opção carrega um *fragmento de prompt* concatenado na instrução
+final enviada ao modelo de IA.
 
 **Modos:** `furnish` (adiciona móveis a um cômodo vazio), `empty` (remove tudo,
-deixando vazio) e `declutter` (remove o excesso, mantendo o mínimo). **Saída:**
-proporção (16:9, 1:1, 3:4, 9:16, 4:3 ou original) atingida por recorte, barras ou
-*outpaint* com IA, e resolução 1K/2K/4K.
+deixando vazio), `declutter` (remove o excesso, mantendo o mínimo), `enhance`
+(melhora a qualidade / upscale, sem alterar a cena) e `edit` (edição localizada
+guiada por máscara — só a região pintada muda). **Saída:** proporção (16:9, 1:1,
+3:4, 9:16, 4:3 ou original) atingida por recorte, barras ou *outpaint* com IA, e
+resolução 1K/2K/4K. Pode-se gerar **1 a 4 variações** por requisição.
+
+**Extras:** antes de processar, a UI mostra (e permite **editar**) o prompt final
+que será enviado ao modelo; cada resultado traz uma **estimativa de custo**
+(USD + BRL) a partir do consumo de tokens; e é possível estampar uma **marca
+d'água** (PNG local, via `sharp`, sem custo de modelo) na imagem de saída.
 
 Veja a especificação completa em [`docs/spec.md`](docs/spec.md) e o design system
 em [`docs/design-system.md`](docs/design-system.md).
@@ -58,13 +65,17 @@ server/src
     imageProvider.js     Gemini (Nano Banana); chave do servidor ou BYOK
     outputFormats.js     presets/validação de proporção, resolução e ajuste
     reframe.js           reframe com sharp (crop/pad) + outpaint com IA
+    inpaint.js           composição "paste-back" da edição mascarada (modo edit)
+    watermark.js         estampa o PNG de marca d'água com sharp (sem IA)
+    pricing.js           estima custo (USD/BRL) a partir do uso de tokens
     storage.js           disco local → URL pública
   routes/
-    staging.js           GET /v1/staging/config · POST /v1/staging
+    staging.js           GET /config · POST /preview-prompt · POST /v1/staging
     admin.js             CRUD de parâmetros/opções
 web/src
   pages/                 StagingPage, ConfigPage
-  components/            ImageDropzone, ParameterField, BeforeAfter, ui/ (shadcn)
+  components/            ImageDropzone, ParameterField, BeforeAfter, ModeSelect,
+                         WatermarkField, MaskCanvas, ui/ (shadcn)
   store/                 stagingStore, configStore (Zustand)
   lib/api.js             cliente da API
 ```
@@ -74,7 +85,8 @@ web/src
 | Método | Rota | Descrição |
 |---|---|---|
 | `GET` | `/v1/staging/config` | Parâmetros ativos (sem `prompt_fragment`) + modos + formatos de saída |
-| `POST` | `/v1/staging` | Processa imagem (multipart) — síncrono. Campos: `image`, `selections`, `extra_prompt`, `mode`, `aspect_ratio`, `aspect_fit`, `image_size` |
+| `POST` | `/v1/staging/preview-prompt` | Monta o prompt final (JSON) sem gerar nada — para preview/edição na UI |
+| `POST` | `/v1/staging` | Processa imagem (multipart) — síncrono. Campos: `image`, `mask`, `selections`, `extra_prompt`, `prompt_override`, `mode`, `aspect_ratio`, `aspect_fit`, `image_size`, `variations`, `gemini_api_key` e marca d'água (`watermark` + `watermark_*`) |
 | `GET` | `/v1/admin/parameters` | Lista parâmetros (detalhe completo) |
 | `POST` | `/v1/admin/parameters` | Cria parâmetro |
 | `PATCH`/`DELETE` | `/v1/admin/parameters/:id` | Edita/remove parâmetro |
@@ -86,5 +98,5 @@ web/src
 
 ## Fora desta versão (fases futuras)
 
-Fila/processamento assíncrono, webhook, máscara automática / inpaint mascarado,
-consistência multi-view, multi-tenant e storage em S3.
+Fila/processamento assíncrono, webhook, máscara automática (a do modo `edit` é
+pintada manualmente), consistência multi-view, multi-tenant e storage em S3.

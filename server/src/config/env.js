@@ -9,6 +9,9 @@ const {
   WEB_ORIGIN = 'http://localhost:5173',
   GEMINI_API_KEY = '',
   GEMINI_MODEL = 'gemini-3.1-flash-image',
+  VIDEO_MODEL = 'veo-3.1-fast-generate-preview',
+  VIDEO_POLL_INTERVAL_MS = '10000', // 10s between provider polls
+  VIDEO_TIMEOUT_MS = '480000', // 8 min hard cap per job
 } = process.env;
 
 export const env = {
@@ -23,5 +26,12 @@ export const env = {
     // Whether the server has its own key. When false, requests must supply a
     // key (BYOK) or they are rejected — there is no mock fallback.
     enabled: GEMINI_API_KEY.trim().length > 0,
+  },
+  // Video generation reuses gemini.key / gemini.enabled for the server key and
+  // BYOK gate; these are video-flow-specific knobs.
+  video: {
+    defaultModel: VIDEO_MODEL,
+    pollIntervalMs: Number(VIDEO_POLL_INTERVAL_MS),
+    timeoutMs: Number(VIDEO_TIMEOUT_MS),
   },
 };

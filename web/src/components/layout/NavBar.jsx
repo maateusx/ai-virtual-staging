@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 
 const links = [
   { to: '/', label: 'Staging', end: true },
+  { to: '/video', label: 'Vídeo' },
   { to: '/config', label: 'Configuração' },
 ];
 

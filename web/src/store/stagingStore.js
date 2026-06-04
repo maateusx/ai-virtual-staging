@@ -32,6 +32,20 @@ export const useStagingStore = create((set, get) => ({
   variations: 1, // how many options to generate per request (1..4)
   apiKey: loadApiKey(),
 
+  // Optional local watermark (a user-supplied PNG stamped over the output).
+  watermarkFile: null,
+  watermarkPreview: null,
+  watermarkVertical: 'bottom', // top | middle | bottom
+  watermarkHorizontal: 'right', // left | center | right
+  watermarkSize: 20, // width as % of the output image
+  watermarkOpacity: 100, // 5..100 (%)
+  watermarkColor: null, // hex string to recolor the mark, or null for its own colours
+
+  // Editable final-prompt preview (the accordion shown before processing).
+  promptDraft: '', // current text in the editor (auto-composed or user-edited)
+  promptEdited: false, // user manually changed the draft → send it as override
+  previewLoading: false,
+
   processing: false,
   result: null, // { result_image_url, composed_prompt, model, processing_ms }
   error: null,
@@ -66,6 +80,8 @@ export const useStagingStore = create((set, get) => ({
       imageFile: file,
       imagePreview: file ? URL.createObjectURL(file) : null,
       maskFile: null, // a new photo invalidates any painted mask
+      promptDraft: '',
+      promptEdited: false,
       result: null,
       error: null,
     });
@@ -87,6 +103,49 @@ export const useStagingStore = create((set, get) => ({
   setImageSize: (imageSize) => set({ imageSize }),
   setVariations: (variations) => set({ variations }),
 
+  setWatermarkFile: (file) => {
+    const prev = get().watermarkPreview;
+    if (prev) URL.revokeObjectURL(prev);
+    set({
+      watermarkFile: file,
+      watermarkPreview: file ? URL.createObjectURL(file) : null,
+    });
+  },
+  setWatermarkVertical: (watermarkVertical) => set({ watermarkVertical }),
+  setWatermarkHorizontal: (watermarkHorizontal) => set({ watermarkHorizontal }),
+  setWatermarkSize: (watermarkSize) => set({ watermarkSize }),
+  setWatermarkOpacity: (watermarkOpacity) => set({ watermarkOpacity }),
+  setWatermarkColor: (watermarkColor) => set({ watermarkColor }),
+
+  // Fetch the auto-composed prompt for the current settings. Skips the network
+  // call (and leaves the text alone) once the user has manually edited it.
+  loadPromptPreview: async () => {
+    if (get().promptEdited) return;
+    const { mode, selections, extraPrompt } = get();
+    set({ previewLoading: true });
+    try {
+      const { composed_prompt } = await api.previewPrompt({
+        mode,
+        selections: mode === 'furnish' ? selections : {},
+        extraPrompt,
+      });
+      // Guard against a race: bail if the user started editing meanwhile.
+      if (!get().promptEdited) set({ promptDraft: composed_prompt });
+    } catch {
+      // Preview is best-effort; ignore failures (the server still composes on run).
+    } finally {
+      set({ previewLoading: false });
+    }
+  },
+
+  setPromptDraft: (promptDraft) => set({ promptDraft, promptEdited: true }),
+
+  // Drop the manual edit and re-sync the draft with the current settings.
+  resetPromptDraft: () => {
+    set({ promptEdited: false });
+    get().loadPromptPreview();
+  },
+
   setApiKey: (apiKey) => {
     try {
       if (apiKey) localStorage.setItem(API_KEY_STORAGE, apiKey);
@@ -97,6 +156,8 @@ export const useStagingStore = create((set, get) => ({
     set({ apiKey });
   },
 
+  // Note: the watermark (file + position + size) is intentionally preserved
+  // across resets — it's usually the same logo reused for every staging.
   reset: () => {
     const prev = get().imagePreview;
     if (prev) URL.revokeObjectURL(prev);
@@ -110,6 +171,8 @@ export const useStagingStore = create((set, get) => ({
       aspectRatio: outputConfig?.default_aspect_ratio ?? null,
       aspectFit: outputConfig?.default_aspect_fit ?? null,
       imageSize: outputConfig?.default_image_size ?? null,
+      promptDraft: '',
+      promptEdited: false,
       result: null,
       error: null,
     });
@@ -127,6 +190,14 @@ export const useStagingStore = create((set, get) => ({
       imageSize,
       apiKey,
       variations,
+      promptDraft,
+      promptEdited,
+      watermarkFile,
+      watermarkVertical,
+      watermarkHorizontal,
+      watermarkSize,
+      watermarkOpacity,
+      watermarkColor,
     } = get();
     if (!imageFile) {
       set({ error: 'Envie uma imagem primeiro.' });
@@ -155,6 +226,15 @@ export const useStagingStore = create((set, get) => ({
         imageSize,
         apiKey,
         variations,
+        // Only send the override when the user actually edited the prompt.
+        promptOverride: promptEdited ? promptDraft.trim() : undefined,
+        // Optional local watermark (only when a PNG was supplied).
+        watermarkFile: watermarkFile || undefined,
+        watermarkVertical,
+        watermarkHorizontal,
+        watermarkSize,
+        watermarkOpacity,
+        watermarkColor,
       });
       set({ result });
     } catch (err) {

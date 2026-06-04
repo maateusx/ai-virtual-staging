@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { NavBar } from '@/components/layout/NavBar';
 import { StagingPage } from '@/pages/StagingPage';
+import { VideoPage } from '@/pages/VideoPage';
 import { ConfigPage } from '@/pages/ConfigPage';
 
 export default function App() {
@@ -12,6 +13,7 @@ export default function App() {
         <main>
           <Routes>
             <Route path="/" element={<StagingPage />} />
+            <Route path="/video" element={<VideoPage />} />
             <Route path="/config" element={<ConfigPage />} />
           </Routes>
         </main>

@@ -3,7 +3,7 @@
 // Swap this module for an S3-backed implementation later — the interface is
 // just `saveBuffer(buffer, ext, dir)` and `publicUrl(relPath)`.
 
-import { writeFile } from 'node:fs/promises';
+import { writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { nanoid } from 'nanoid';
@@ -17,6 +17,7 @@ const EXT_BY_MIME = {
   'image/jpg': 'jpg',
   'image/png': 'png',
   'image/webp': 'webp',
+  'video/mp4': 'mp4',
 };
 
 export function extForMime(mime) {
@@ -27,12 +28,14 @@ export function extForMime(mime) {
  * Persist a buffer under uploads/<dir> and return its public URL + paths.
  * @param {Buffer} buffer
  * @param {string} ext   file extension without dot (e.g. "jpg")
- * @param {'in'|'out'} dir
+ * @param {'in'|'out'|'vid'} dir
  */
 export async function saveBuffer(buffer, ext, dir) {
   const filename = `${nanoid(16)}.${ext}`;
   const relPath = `${dir}/${filename}`;
   const absPath = path.join(UPLOADS_ROOT, dir, filename);
+  // Ensure the target dir exists (e.g. 'vid' on first video generation).
+  await mkdir(path.join(UPLOADS_ROOT, dir), { recursive: true });
   await writeFile(absPath, buffer);
   return { relPath, absPath, url: publicUrl(relPath) };
 }

@@ -33,6 +33,33 @@ const NO_ADDITIONS =
   'revealed area must look like blank, uninterrupted wall and floor — never a ' +
   'door, window or any other feature that was not in the original photograph.';
 
+// Quality enhancement / upscale. Strict fidelity: nothing in the scene changes,
+// the image just comes back sharper and at higher resolution. The output
+// format controls (aspect ratio, resolution) still apply, so this runs through
+// the normal generation pipeline like the other non-edit modes.
+const ENHANCE_TEMPLATE =
+  'Ultra-high-resolution 4K enhancement based strictly on the provided ' +
+  'reference image. Absolute fidelity to original facial anatomy, proportions, ' +
+  'and identity. Preserve expression, gaze, pose, camera angle, framing, and ' +
+  'perspective with zero deviation. Clothing, hair, skin, and background ' +
+  'elements must remain unchanged in structure, placement, and design. Recover ' +
+  'fine-grain detail with natural realism. Enhance pores, fine lines, hair ' +
+  'strands, eyelashes, fabric weave, seams, and material edges without ' +
+  'introducing stylization. Maintain original color science, white balance, and ' +
+  'tonal relationships exactly as captured. Lighting direction, intensity, ' +
+  'contrast, and shadow behavior must match the source image precisely, with ' +
+  'only improved clarity and expanded dynamic range. No relighting, no ' +
+  'reshaping. Remove any grain. Apply controlled sharpening and high-frequency ' +
+  'detail reconstruction. Remove compression artifacts and noise while ' +
+  'retaining authentic texture. No smoothing, no plastic skin, no artificial ' +
+  'gloss. Facial features must remain consistent across the entire image with ' +
+  'coherent anatomy and clean, stable edges. Negative constraints: no warping, ' +
+  'no facial drift, no added or missing anatomy, no altered hands, no ' +
+  'distortions, no perspective shift, no text or graphics, no hallucinated ' +
+  'detail, no stylized rendering. Output must read as a true-to-life, ' +
+  'photorealistic upscale that matches the reference exactly, only clearer, ' +
+  'sharper, and higher resolution.';
+
 const BASE_TEMPLATES = {
   furnish:
     'Add furniture and decor to this room. ' +
@@ -47,6 +74,7 @@ const BASE_TEMPLATES = {
     'rearrange the pieces you keep — leave them exactly as they are. ' +
     'Realistically reconstruct the floor and walls revealed where objects were ' +
     `removed. ${NO_ADDITIONS} ${PRESERVE}`,
+  enhance: ENHANCE_TEMPLATE,
 };
 
 // Public list of modes (id + label) for the config endpoint / UI toggle.
@@ -54,6 +82,7 @@ export const STAGING_MODES = [
   { id: 'furnish', label: 'Mobiliar' },
   { id: 'empty', label: 'Esvaziar' },
   { id: 'declutter', label: 'Minimizar' },
+  { id: 'enhance', label: 'Melhorar qualidade' },
   { id: 'edit', label: 'Editar' },
 ];
 

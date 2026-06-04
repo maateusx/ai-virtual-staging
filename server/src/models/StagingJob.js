@@ -19,6 +19,18 @@ const jobSchema = new Schema(
     aspect_ratio: { type: String },
     aspect_fit: { type: String },
     image_size: { type: String },
+    // Local watermark settings, when one was applied to the output.
+    watermark: {
+      type: {
+        vertical: String,
+        horizontal: String,
+        size: Number,
+        opacity: Number,
+        color: String,
+      },
+      default: undefined,
+      _id: false,
+    },
     model: { type: String },
     processing_ms: { type: Number },
     // Aggregated Gemini token usage across all variations of this request.
@@ -27,6 +39,18 @@ const jobSchema = new Schema(
         prompt_tokens: Number,
         output_tokens: Number,
         total_tokens: Number,
+      },
+      default: undefined,
+      _id: false,
+    },
+    // Estimated generation cost derived from token usage.
+    cost: {
+      type: {
+        usd: Number,
+        brl: Number,
+        input_usd: Number,
+        output_usd: Number,
+        usd_to_brl: Number,
       },
       default: undefined,
       _id: false,

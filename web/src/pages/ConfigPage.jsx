@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, Settings2 } from 'lucide-react';
+import { Plus, Trash2, Settings2, CircleDot, ListChecks } from 'lucide-react';
 import { toast } from 'sonner';
 import { useConfigStore } from '@/store/configStore';
 import { Button } from '@/components/ui/button';
@@ -7,13 +7,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { CardSelect } from '@/components/ui/CardSelect';
+
+const PARAMETER_TYPES = [
+  {
+    id: 'single_select',
+    label: 'Seleção única',
+    description: 'O usuário escolhe apenas uma opção.',
+    Icon: CircleDot,
+  },
+  {
+    id: 'multi_select',
+    label: 'Múltipla escolha',
+    description: 'O usuário pode escolher várias opções.',
+    Icon: ListChecks,
+  },
+];
 
 export function ConfigPage() {
   const {
@@ -73,17 +82,9 @@ export function ConfigPage() {
               onKeyDown={(e) => e.key === 'Enter' && addParameter()}
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2 sm:w-56">
             <Label>Tipo</Label>
-            <Select value={newType} onValueChange={setNewType}>
-              <SelectTrigger className="w-44">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="single_select">Seleção única</SelectItem>
-                <SelectItem value="multi_select">Múltipla escolha</SelectItem>
-              </SelectContent>
-            </Select>
+            <CardSelect options={PARAMETER_TYPES} value={newType} onChange={setNewType} />
           </div>
           <Button onClick={addParameter}>
             <Plus className="h-4 w-4" /> Adicionar

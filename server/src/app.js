@@ -6,6 +6,7 @@ import { env } from './config/env.js';
 import { UPLOADS_ROOT } from './services/storage.js';
 import { stagingRoutes } from './routes/staging.js';
 import { adminRoutes } from './routes/admin.js';
+import { videoRoutes } from './routes/video.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -42,6 +43,7 @@ export async function buildApp() {
 
   await app.register(stagingRoutes);
   await app.register(adminRoutes);
+  await app.register(videoRoutes);
 
   return app;
 }

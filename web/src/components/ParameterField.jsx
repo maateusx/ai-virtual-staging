@@ -1,12 +1,20 @@
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Palette } from 'lucide-react';
+import { CardSelect } from '@/components/ui/CardSelect';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+
+// Short, user-facing descriptions for the seeded decoration styles. Keyed by the
+// option label (the only handle the public config exposes). Used as a fallback
+// when the option itself carries no description — if the backend ever adds a
+// `description` field, that takes precedence. New/renamed styles just show no
+// description until one is provided.
+const OPTION_DESCRIPTIONS = {
+  Escandinavo: 'Madeira clara, tons neutros e poucos móveis — clima leve e aconchegante.',
+  Moderno: 'Linhas retas, paleta neutra e móveis contemporâneos.',
+  Industrial: 'Materiais aparentes, detalhes em metal e tons escuros.',
+  Clássico: 'Móveis de madeira elegantes, tons quentes e decoração refinada.',
+  Minimalista: 'Poucas peças essenciais e visual limpo, sem excessos.',
+};
 
 // Renders one configured parameter on the staging screen.
 // single_select -> dropdown; multi_select -> toggle chips.
@@ -44,21 +52,17 @@ export function ParameterField({ parameter, value, onChange }) {
   }
 
   // single_select
+  const options = parameter.options.map((opt) => ({
+    id: opt.id,
+    label: opt.label,
+    description: opt.description ?? OPTION_DESCRIPTIONS[opt.label],
+    Icon: Palette,
+  }));
+
   return (
     <div className="space-y-2">
       <Label>{parameter.label}</Label>
-      <Select value={value ?? ''} onValueChange={onChange}>
-        <SelectTrigger>
-          <SelectValue placeholder="Selecione…" />
-        </SelectTrigger>
-        <SelectContent>
-          {parameter.options.map((opt) => (
-            <SelectItem key={opt.id} value={opt.id}>
-              {opt.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <CardSelect options={options} value={value ?? null} onChange={onChange} />
     </div>
   );
 }
