@@ -12,6 +12,7 @@
 // (no aspectRatio sent → the model preserves the source proportions).
 export const ASPECT_RATIOS = [
   { id: 'original', label: 'Original (preservar entrada)', value: null },
+  { id: '21:9', label: 'Panorâmica 21:9', value: '21:9' },
   { id: '16:9', label: 'Paisagem 16:9', value: '16:9' },
   { id: '1:1', label: 'Quadrado 1:1', value: '1:1' },
   { id: '3:4', label: 'Vertical 3:4', value: '3:4' },
