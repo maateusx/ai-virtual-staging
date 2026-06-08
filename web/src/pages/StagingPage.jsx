@@ -3,10 +3,6 @@ import {
   Loader2,
   Download,
   Wand2,
-  ChevronDown,
-  Eye,
-  EyeOff,
-  KeyRound,
   Image as ImageIcon,
   Images,
   Square,
@@ -24,12 +20,16 @@ import { ParameterField } from '@/components/ParameterField';
 import { BeforeAfter } from '@/components/BeforeAfter';
 import { ModeSelect } from '@/components/ModeSelect';
 import { WatermarkField } from '@/components/WatermarkField';
+import { ApiKeyField } from '@/components/ApiKeyField';
+import { MetaLine } from '@/components/MetaLine';
+import { ProcessingPlaceholder } from '@/components/ProcessingPlaceholder';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CardSelect } from '@/components/ui/CardSelect';
+import { DisclosureToggle } from '@/components/ui/Disclosure';
 
 // Icon + usage hint per aspect-ratio preset id (see server outputFormats.js).
 // Descriptions point to where each format fits best on social media.
@@ -105,7 +105,6 @@ export function StagingPage() {
 
   const [showPrompt, setShowPrompt] = useState(false);
   const [showPromptEditor, setShowPromptEditor] = useState(false);
-  const [showKey, setShowKey] = useState(false);
   const [selectedVariation, setSelectedVariation] = useState(0);
 
   // Result variations (falls back to the single-image shape for safety).
@@ -168,26 +167,26 @@ export function StagingPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">
-      <div className="mb-10 max-w-2xl">
-        <h1 className="font-display text-4xl font-semibold leading-tight">
-          {isFurnish
+      <PageHeader
+        title={
+          isFurnish
             ? 'Mobilie ambientes vazios com IA'
             : isEdit
               ? 'Edite trechos da foto com IA'
               : isEnhance
                 ? 'Melhore a qualidade da foto com IA'
-                : 'Esvazie ambientes com IA'}
-        </h1>
-        <p className="mt-3 text-lg text-muted-foreground">
-          {isFurnish
+                : 'Esvazie ambientes com IA'
+        }
+        subtitle={
+          isFurnish
             ? 'Envie a foto de um cômodo vazio, escolha o estilo e receba o ambiente mobiliado — preservando paredes, janelas e perspectiva.'
             : isEdit
               ? 'Envie a foto, pinte a região que quer mudar e descreva a alteração — só a área marcada é editada, o resto fica idêntico.'
               : isEnhance
                 ? 'Envie a foto e receba de volta a mesma imagem, sem alterar nada do conteúdo — apenas mais nítida e em maior resolução.'
-                : 'Envie a foto de um cômodo e remova os móveis — preservando paredes, janelas e perspectiva.'}
-        </p>
-      </div>
+                : 'Envie a foto de um cômodo e remova os móveis — preservando paredes, janelas e perspectiva.'
+        }
+      />
 
       <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
         {/* Left: upload + result */}
@@ -205,6 +204,13 @@ export function StagingPage() {
               onSelect={setImage}
               onClear={() => setImage(null)}
               disabled={processing}
+            />
+          )}
+
+          {processing && !result && (
+            <ProcessingPlaceholder
+              title="Processando…"
+              subtitle="Isso pode levar de 15s a ~2min."
             />
           )}
 
@@ -255,35 +261,30 @@ export function StagingPage() {
                 <Button variant="secondary" onClick={reset}>
                   Novo staging
                 </Button>
-                <span className="text-sm text-muted-foreground">
-                  {result.model} · {(result.processing_ms / 1000).toFixed(1)}s
-                  {result.aspect_ratio ? ` · ${result.aspect_ratio}` : ''}
-                  {result.image_size ? ` · ${result.image_size}` : ''}
-                  {result.usage?.total_tokens
-                    ? ` · ${result.usage.total_tokens.toLocaleString('pt-BR')} tokens`
-                    : ''}
-                  {result.cost
-                    ? ` · ${result.cost.brl.toLocaleString('pt-BR', {
+                <MetaLine
+                  items={[
+                    result.model,
+                    `${(result.processing_ms / 1000).toFixed(1)}s`,
+                    result.aspect_ratio,
+                    result.image_size,
+                    result.usage?.total_tokens &&
+                      `${result.usage.total_tokens.toLocaleString('pt-BR')} tokens`,
+                    result.cost &&
+                      `${result.cost.brl.toLocaleString('pt-BR', {
                         style: 'currency',
                         currency: 'BRL',
                       })} (${result.cost.usd.toLocaleString('en-US', {
                         style: 'currency',
                         currency: 'USD',
                         minimumFractionDigits: result.cost.usd < 0.01 ? 4 : 2,
-                      })})`
-                    : ''}
-                </span>
+                      })})`,
+                  ]}
+                />
               </div>
 
-              <button
-                onClick={() => setShowPrompt((v) => !v)}
-                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-              >
-                <ChevronDown
-                  className={`h-4 w-4 transition-transform ${showPrompt ? 'rotate-180' : ''}`}
-                />
+              <DisclosureToggle open={showPrompt} onToggle={() => setShowPrompt((v) => !v)}>
                 Ver prompt final
-              </button>
+              </DisclosureToggle>
               {showPrompt && (
                 <Card>
                   <CardContent className="p-4 text-sm text-muted-foreground">
@@ -424,52 +425,13 @@ export function StagingPage() {
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label className="flex items-center gap-1.5">
-                  <KeyRound className="h-4 w-4" /> Chave da API Gemini{' '}
-                  {keyRequired ? (
-                    <span className="text-destructive">*</span>
-                  ) : (
-                    <span className="font-normal text-muted-foreground">(opcional)</span>
-                  )}
-                </Label>
-                <div className="relative">
-                  <Input
-                    type={showKey ? 'text' : 'password'}
-                    autoComplete="off"
-                    spellCheck={false}
-                    placeholder="AIza…"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    aria-invalid={missingKey}
-                    className={`pr-11 ${missingKey ? 'border-destructive' : ''}`}
-                  />
-                  {apiKey && (
-                    <button
-                      type="button"
-                      onClick={() => setShowKey((v) => !v)}
-                      className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
-                      aria-label={showKey ? 'Ocultar chave' : 'Mostrar chave'}
-                    >
-                      {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {keyRequired
-                    ? 'Este servidor não tem chave própria — cole sua chave do Gemini para processar.'
-                    : 'Cole sua chave para usar sua própria cota do Gemini (opcional).'}{' '}
-                  Fica salva apenas neste navegador e é enviada só para processar a imagem.{' '}
-                  <a
-                    href="https://aistudio.google.com/apikey"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="underline hover:text-foreground"
-                  >
-                    Obter uma chave
-                  </a>
-                </p>
-              </div>
+              <ApiKeyField
+                value={apiKey}
+                onChange={setApiKey}
+                required={keyRequired}
+                requiredHint="Este servidor não tem chave própria — cole sua chave do Gemini para processar."
+                note="Fica salva apenas neste navegador e é enviada só para processar a imagem."
+              />
 
               <div className="border-t border-border pt-5">
                 <WatermarkField disabled={processing} />
@@ -479,16 +441,12 @@ export function StagingPage() {
 
           {/* Final prompt: preview & edit before running a (billed) generation */}
           <div className="space-y-2">
-            <button
-              type="button"
-              onClick={() => setShowPromptEditor((v) => !v)}
-              className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+            <DisclosureToggle
+              open={showPromptEditor}
+              onToggle={() => setShowPromptEditor((v) => !v)}
             >
-              <ChevronDown
-                className={`h-4 w-4 transition-transform ${showPromptEditor ? 'rotate-180' : ''}`}
-              />
               {showPromptEditor ? 'Ocultar prompt final' : 'Ver / editar prompt final'}
-            </button>
+            </DisclosureToggle>
             {showPromptEditor && (
               <div className="space-y-2">
                 <Textarea
@@ -542,11 +500,6 @@ export function StagingPage() {
               </>
             )}
           </Button>
-          {processing && (
-            <p className="text-center text-sm text-muted-foreground">
-              Isso pode levar de 15s a ~2min.
-            </p>
-          )}
         </div>
       </div>
     </div>

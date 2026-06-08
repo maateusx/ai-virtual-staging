@@ -77,7 +77,7 @@ export function CardSelect({ options, value, onChange, disabled, placeholder = '
       {open && (
         <div
           role="listbox"
-          className="absolute z-20 mt-2 grid w-full gap-2 rounded-lg border bg-background p-2 shadow-lg"
+          className="absolute z-20 mt-2 grid w-full gap-2 rounded-lg border bg-background p-2 shadow-popover"
         >
           {options.map((o) => {
             const Icon = o.Icon;

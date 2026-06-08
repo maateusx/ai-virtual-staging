@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, Settings2, CircleDot, ListChecks } from 'lucide-react';
+import { Plus, Trash2, CircleDot, ListChecks } from 'lucide-react';
 import { toast } from 'sonner';
 import { useConfigStore } from '@/store/configStore';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { CardSelect } from '@/components/ui/CardSelect';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 const PARAMETER_TYPES = [
   {
@@ -58,14 +59,15 @@ export function ConfigPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">
-      <div className="mb-8 flex items-center gap-2">
-        <Settings2 className="h-5 w-5 text-primary" />
-        <h1 className="font-display text-3xl font-semibold">Configuração de parâmetros</h1>
-      </div>
-      <p className="mb-8 text-muted-foreground">
-        Defina os parâmetros e opções exibidos na tela de staging. Cada opção carrega
-        um <em>fragmento de prompt</em> usado para montar a instrução final.
-      </p>
+      <PageHeader
+        title="Configuração de parâmetros"
+        subtitle={
+          <>
+            Defina os parâmetros e opções exibidos na tela de staging. Cada opção carrega um{' '}
+            <em>fragmento de prompt</em> usado para montar a instrução final.
+          </>
+        }
+      />
 
       {/* New parameter */}
       <Card className="mb-8">
@@ -145,7 +147,8 @@ function ParameterCard({
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           onBlur={saveLabel}
-          className="max-w-xs border-transparent px-0 text-lg font-semibold focus-visible:border-input focus-visible:px-4"
+          title="Clique para renomear"
+          className="max-w-xs border-transparent px-2 text-lg font-semibold transition-colors hover:bg-secondary/60 focus-visible:border-input focus-visible:bg-background"
         />
         <div className="flex items-center gap-4">
           <span className="text-xs text-muted-foreground">

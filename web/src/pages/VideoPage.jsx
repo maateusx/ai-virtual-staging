@@ -1,11 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import {
   Loader2,
   Download,
   Film,
-  Eye,
-  EyeOff,
-  KeyRound,
   RectangleHorizontal,
   RectangleVertical,
   Proportions,
@@ -17,10 +14,13 @@ import { useVideoStore } from '@/store/videoStore';
 import { ImageDropzone } from '@/components/ImageDropzone';
 import { VideoModelSelect } from '@/components/VideoModelSelect';
 import { MotionSelect } from '@/components/MotionSelect';
+import { ApiKeyField } from '@/components/ApiKeyField';
+import { MetaLine } from '@/components/MetaLine';
+import { ProcessingPlaceholder } from '@/components/ProcessingPlaceholder';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { CardSelect } from '@/components/ui/CardSelect';
@@ -74,8 +74,6 @@ export function VideoPage() {
     stopPolling,
   } = useVideoStore();
 
-  const [showKey, setShowKey] = useState(false);
-
   const descriptor = models.find((m) => m.id === model) ?? null;
   const keyRequired = !serverHasKey;
   const missingKey = keyRequired && !apiKey.trim();
@@ -116,15 +114,10 @@ export function VideoPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">
-      <div className="mb-10 max-w-2xl">
-        <h1 className="font-display text-4xl font-semibold leading-tight">
-          Crie vídeos a partir de uma imagem
-        </h1>
-        <p className="mt-3 text-lg text-muted-foreground">
-          Envie uma foto, escolha o modelo e os parâmetros, e a IA gera um vídeo curto animando a
-          cena. A geração é assíncrona — pode levar alguns minutos.
-        </p>
-      </div>
+      <PageHeader
+        title="Crie vídeos a partir de uma imagem"
+        subtitle="Envie uma foto, escolha o modelo e os parâmetros, e a IA gera um vídeo curto animando a cena. A geração é assíncrona — pode levar alguns minutos."
+      />
 
       <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
         {/* Left: upload + result */}
@@ -137,13 +130,10 @@ export function VideoPage() {
           />
 
           {processing && (
-            <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border bg-secondary/40 py-12 text-center">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              <p className="font-medium">Gerando vídeo…</p>
-              <p className="text-sm text-muted-foreground">
-                Isso pode levar alguns minutos. Você pode deixar esta aba aberta.
-              </p>
-            </div>
+            <ProcessingPlaceholder
+              title="Gerando vídeo…"
+              subtitle="Isso pode levar alguns minutos. Você pode deixar esta aba aberta."
+            />
           )}
 
           {done && (
@@ -162,18 +152,19 @@ export function VideoPage() {
                 <Button variant="secondary" onClick={reset}>
                   Novo vídeo
                 </Button>
-                <span className="text-sm text-muted-foreground">
-                  {result.model}
-                  {result.processing_ms ? ` · ${(result.processing_ms / 1000).toFixed(0)}s` : ''}
-                  {result.aspect_ratio ? ` · ${result.aspect_ratio}` : ''}
-                  {result.resolution ? ` · ${result.resolution}` : ''}
-                  {result.duration_seconds ? ` · ${result.duration_seconds}s` : ''}
-                  {result.cost
-                    ? ` · ${result.cost.duration_seconds}s × $${result.cost.price_per_second_usd.toFixed(
+                <MetaLine
+                  items={[
+                    result.model,
+                    result.processing_ms && `${(result.processing_ms / 1000).toFixed(0)}s`,
+                    result.aspect_ratio,
+                    result.resolution,
+                    result.duration_seconds && `${result.duration_seconds}s`,
+                    result.cost &&
+                      `${result.cost.duration_seconds}s × $${result.cost.price_per_second_usd.toFixed(
                         2
-                      )}/s · ${fmtCost(result.cost)}`
-                    : ''}
-                </span>
+                      )}/s · ${fmtCost(result.cost)}`,
+                  ]}
+                />
               </div>
             </div>
           )}
@@ -284,52 +275,13 @@ export function VideoPage() {
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <Label className="flex items-center gap-1.5">
-                  <KeyRound className="h-4 w-4" /> Chave da API Gemini{' '}
-                  {keyRequired ? (
-                    <span className="text-destructive">*</span>
-                  ) : (
-                    <span className="font-normal text-muted-foreground">(opcional)</span>
-                  )}
-                </Label>
-                <div className="relative">
-                  <Input
-                    type={showKey ? 'text' : 'password'}
-                    autoComplete="off"
-                    spellCheck={false}
-                    placeholder="AIza…"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    aria-invalid={missingKey}
-                    className={`pr-11 ${missingKey ? 'border-destructive' : ''}`}
-                  />
-                  {apiKey && (
-                    <button
-                      type="button"
-                      onClick={() => setShowKey((v) => !v)}
-                      className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
-                      aria-label={showKey ? 'Ocultar chave' : 'Mostrar chave'}
-                    >
-                      {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {keyRequired
-                    ? 'Este servidor não tem chave própria — cole sua chave do Gemini para gerar.'
-                    : 'Cole sua chave para usar sua própria cota do Gemini (opcional).'}{' '}
-                  A chave precisa de acesso ao Veo. Fica salva apenas neste navegador.{' '}
-                  <a
-                    href="https://aistudio.google.com/apikey"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="underline hover:text-foreground"
-                  >
-                    Obter uma chave
-                  </a>
-                </p>
-              </div>
+              <ApiKeyField
+                value={apiKey}
+                onChange={setApiKey}
+                required={keyRequired}
+                requiredHint="Este servidor não tem chave própria — cole sua chave do Gemini para gerar."
+                note="A chave precisa de acesso ao Veo. Fica salva apenas neste navegador."
+              />
             </CardContent>
           </Card>
 

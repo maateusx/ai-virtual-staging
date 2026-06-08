@@ -3,16 +3,16 @@ import { Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const links = [
-  { to: '/', label: 'Staging', end: true },
-  { to: '/video', label: 'Vídeo' },
-  { to: '/config', label: 'Configuração' },
+  { to: '/app', label: 'Staging', end: true },
+  { to: '/app/video', label: 'Vídeo' },
+  { to: '/app/config', label: 'Configuração' },
 ];
 
 export function NavBar() {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur-md backdrop-saturate-150">
       <nav className="mx-auto flex h-12 max-w-6xl items-center gap-8 px-6">
-        <NavLink to="/" className="flex items-center gap-1.5 font-display text-[15px] font-semibold">
+        <NavLink to="/app" end className="flex items-center gap-1.5 font-display text-[15px] font-semibold">
           <Sparkles className="h-4 w-4 text-primary" />
           decorar<span className="text-primary">.ai</span>
         </NavLink>
