@@ -1,10 +1,18 @@
 import { LandingNav } from './LandingNav';
 import { Hero } from './Hero';
 import { FeatureCards } from './FeatureCards';
+import { VideoShowcase } from './VideoShowcase';
+import { TechFeatures } from './TechFeatures';
 import { HowItWorks } from './HowItWorks';
+import { Audience } from './Audience';
+import { Comparison } from './Comparison';
 import { Differentials } from './Differentials';
 import { StatsProof } from './StatsProof';
+import { Pricing } from './Pricing';
+import { Testimonials } from './Testimonials';
+import { TrustPrivacy } from './TrustPrivacy';
 import { Faq } from './Faq';
+import { TryDemo } from './TryDemo';
 import { CtaBand } from './CtaBand';
 import { LandingFooter } from './LandingFooter';
 
@@ -18,10 +26,18 @@ export function LandingPage() {
       <main>
         <Hero />
         <FeatureCards />
+        <VideoShowcase />
+        <TechFeatures />
         <HowItWorks />
+        <Audience />
+        <Comparison />
         <Differentials />
         <StatsProof />
+        <Pricing />
+        <Testimonials />
+        <TrustPrivacy />
         <Faq />
+        <TryDemo />
         <CtaBand />
       </main>
       <LandingFooter />

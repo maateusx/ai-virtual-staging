@@ -21,6 +21,7 @@ export function LandingNav() {
   const links = [
     { href: '#features', label: t.nav.features },
     { href: '#how', label: t.nav.how },
+    { href: '#pricing', label: t.nav.pricing },
   ];
 
   return (
