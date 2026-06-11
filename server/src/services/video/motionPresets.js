@@ -72,6 +72,81 @@ export function isValidMotion(id) {
   return MOTION_BY_ID.has(id);
 }
 
+// --- Video styles --------------------------------------------------------------
+// A `style` is the top-level choice for HOW a video is generated:
+//   - 'motion'    : the existing image-to-video — one frame, camera-motion preset,
+//                   wrapped with the strict STILL_SCENE lock (the room never changes).
+//   - 'transform' : a renovation/timelapse — a FIRST frame (current state) and a
+//                   LAST frame (finished state) are both sent to Veo, with an
+//                   editable prompt describing the transition and a LIGHT geometry
+//                   lock that PERMITS the change while keeping the structure stable.
+// Motion presets only apply to the 'motion' style.
+
+// The light lock for transform videos. Opposite intent to STILL_SCENE: the scene
+// is MEANT to change between the first and last frame, but the building itself
+// must stay structurally consistent so Veo doesn't rebuild a different house.
+const LIGHT_GEOMETRY_LOCK =
+  'Keep the building itself structurally consistent across the whole clip: walls, ' +
+  'roof, windows, doors, columns and the overall proportions and perspective stay ' +
+  'the same as in the two frames. You MAY show the transformation itself happening ' +
+  '— removing garbage and debris, clearing grass and weeds, cleaning, repairing ' +
+  'and painting surfaces — and people or workers performing that work. The first ' +
+  'frame is the starting state and the final frame is the finished result; the ' +
+  'video must end matching the final frame. Do not rebuild, distort, bend or ' +
+  'reinterpret the architecture, and do not add new rooms, floors, openings or ' +
+  'separate structures that are not in the frames. Photorealistic, with consistent ' +
+  'camera perspective and lighting that evolves naturally with the work.';
+
+export const VIDEO_STYLES = [
+  { id: 'motion', label: 'Movimento de câmera', usesLastFrame: false },
+  { id: 'transform', label: 'Transformação (timelapse)', usesLastFrame: true },
+];
+
+export const DEFAULT_STYLE = 'motion';
+
+// Default, user-editable prompt for the transform style.
+export const DEFAULT_TRANSFORM_PROMPT =
+  'Timelapse of this home renovation. multiple workers picking up the garbage, ' +
+  'removing the grass from the house, washing it and making it ready for the ' +
+  'paint as shown in the final frame. Fast-motion construction actively showing ' +
+  'the transformation from bare unfinished home to polished area. Realistic ' +
+  'construction site progression.';
+
+const STYLE_BY_ID = new Map(VIDEO_STYLES.map((s) => [s.id, s]));
+
+export function isValidStyle(id) {
+  return STYLE_BY_ID.has(id);
+}
+
+export function styleUsesLastFrame(id) {
+  return !!STYLE_BY_ID.get(id)?.usesLastFrame;
+}
+
+// Public list for /v1/video/config.
+export function publicStyles() {
+  return VIDEO_STYLES.map(({ id, label, usesLastFrame }) => ({
+    id,
+    label,
+    uses_last_frame: usesLastFrame,
+  }));
+}
+
+/**
+ * Build the final prompt for a transform (first-frame → last-frame) video:
+ *   [editable description, defaults to DEFAULT_TRANSFORM_PROMPT] + [LIGHT_GEOMETRY_LOCK]
+ *
+ * The lock is always appended last (matching composeVideoPrompt's philosophy): the
+ * user edits WHAT transforms, never opts out of structural stability.
+ *
+ * @param {string} editablePrompt  user's transformation description (optional)
+ * @returns {string} the composed prompt
+ */
+export function composeTransformPrompt(editablePrompt = '') {
+  const detail = (editablePrompt || '').trim() || DEFAULT_TRANSFORM_PROMPT;
+  const text = detail.endsWith('.') ? detail : `${detail}.`;
+  return `${text} ${LIGHT_GEOMETRY_LOCK}`;
+}
+
 // Public list for /v1/video/config — only id + label, no internal prompt text.
 export function publicMotions() {
   return MOTION_PRESETS.map(({ id, label }) => ({ id, label }));

@@ -8,6 +8,8 @@ import {
   Proportions,
   MonitorPlay,
   Clock,
+  Camera,
+  Wand2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useVideoStore } from '@/store/videoStore';
@@ -24,6 +26,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { CardSelect } from '@/components/ui/CardSelect';
+import { useSeo } from '@/lib/useSeo';
 
 // Label + icon + usage hint per video aspect ratio. The description calls out
 // where each format fits best — 9:16 is the one for Stories/Reels.
@@ -40,16 +43,41 @@ const ASPECT_META = {
   },
 };
 
+// Icon + description per generation style (matched to the styles from the API).
+const STYLE_META = {
+  motion: {
+    Icon: Camera,
+    description: 'A câmera se move pela foto; o ambiente continua idêntico, sem mudar nada.',
+  },
+  transform: {
+    Icon: Wand2,
+    description: 'Timelapse do estado atual ao resultado final — reforma, limpeza, pintura.',
+  },
+};
+
 export function VideoPage() {
+  useSeo({
+    title: 'Gerador de vídeos',
+    description:
+      'Crie vídeos de imóveis a partir de uma foto com IA — movimento de câmera ou timelapse de reforma, em poucos minutos.',
+    path: '/app/video',
+  });
+
   const {
     models,
     motions,
+    styles,
     loadConfig,
     imageFile,
     imagePreview,
     setImage,
+    imageFile2,
+    imagePreview2,
+    setImage2,
     model,
     setModel,
+    style,
+    setStyle,
     motion,
     setMotion,
     aspectRatio,
@@ -62,6 +90,8 @@ export function VideoPage() {
     setAudio,
     prompt,
     setPrompt,
+    stagingPrompt,
+    setStagingPrompt,
     apiKey,
     setApiKey,
     serverHasKey,
@@ -79,6 +109,11 @@ export function VideoPage() {
   const missingKey = keyRequired && !apiKey.trim();
   const processing = status === 'processing';
   const done = status === 'done' && result?.result_video_url;
+  const isTransform = style === 'transform';
+  // The 'transform' style needs a model that supports first→last frame.
+  const availableStyles = styles.filter(
+    (s) => s.id !== 'transform' || descriptor?.supports_last_frame
+  );
 
   useEffect(() => {
     loadConfig();
@@ -122,12 +157,34 @@ export function VideoPage() {
       <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
         {/* Left: upload + result */}
         <div className="space-y-6">
+          {isTransform && (
+            <Label className="block text-sm text-muted-foreground">
+              Quadro inicial (estado atual)
+            </Label>
+          )}
           <ImageDropzone
             preview={imagePreview}
             onSelect={setImage}
             onClear={() => setImage(null)}
             disabled={processing || submitting}
           />
+
+          {isTransform && (
+            <div className="space-y-2">
+              <Label className="block text-sm text-muted-foreground">Quadro final (opcional)</Label>
+              <ImageDropzone
+                preview={imagePreview2}
+                onSelect={setImage2}
+                onClear={() => setImage2(null)}
+                disabled={processing || submitting}
+              />
+              <p className="text-xs text-muted-foreground">
+                Opcional — se você não enviar o "depois", a IA gera o quadro final
+                automaticamente a partir da primeira imagem (gera uma imagem extra, com custo
+                adicional).
+              </p>
+            </div>
+          )}
 
           {processing && (
             <ProcessingPlaceholder
@@ -163,9 +220,27 @@ export function VideoPage() {
                       `${result.cost.duration_seconds}s × $${result.cost.price_per_second_usd.toFixed(
                         2
                       )}/s · ${fmtCost(result.cost)}`,
+                    result.cost?.staging_brl != null &&
+                      `+ quadro final: ${result.cost.staging_brl.toLocaleString('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      })}`,
                   ]}
                 />
               </div>
+
+              {result.final_frame_mode === 'auto' && result.input_image_final_url && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Quadro final gerado pela IA
+                  </h3>
+                  <img
+                    src={result.input_image_final_url}
+                    alt="quadro final gerado"
+                    className="max-h-[260px] w-full rounded-lg border border-border object-contain bg-secondary"
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -174,6 +249,23 @@ export function VideoPage() {
         <div className="space-y-6">
           <Card>
             <CardContent className="space-y-5 p-6">
+              {availableStyles.length > 1 && (
+                <div className="space-y-2">
+                  <Label>Estilo de geração</Label>
+                  <CardSelect
+                    options={availableStyles.map((s) => ({
+                      id: s.id,
+                      label: s.label,
+                      Icon: STYLE_META[s.id]?.Icon,
+                      description: STYLE_META[s.id]?.description,
+                    }))}
+                    value={style}
+                    onChange={setStyle}
+                    disabled={processing || submitting}
+                  />
+                </div>
+              )}
+
               {models.length > 0 && (
                 <div className="space-y-2">
                   <Label>Modelo de vídeo</Label>
@@ -186,7 +278,7 @@ export function VideoPage() {
                 </div>
               )}
 
-              {motions.length > 0 && (
+              {!isTransform && motions.length > 0 && (
                 <div className="space-y-2">
                   <Label>Movimento de câmera</Label>
                   <MotionSelect
@@ -263,17 +355,39 @@ export function VideoPage() {
               )}
 
               <div className="space-y-2">
-                <Label>Detalhes adicionais (opcional)</Label>
+                <Label>
+                  {isTransform ? 'Descrição da transformação' : 'Detalhes adicionais (opcional)'}
+                </Label>
                 <Textarea
-                  placeholder="ex.: movimento mais lento, leve aproximação ao final"
+                  className={isTransform ? 'min-h-[120px]' : undefined}
+                  placeholder={
+                    isTransform
+                      ? 'Descreva a transformação do primeiro ao último quadro…'
+                      : 'ex.: movimento mais lento, leve aproximação ao final'
+                  }
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                 />
                 <p className="text-sm text-muted-foreground">
-                  Ajuste fino do movimento escolhido acima. A foto enviada é o primeiro quadro e o
-                  ambiente permanece inalterado.
+                  {isTransform
+                    ? 'O primeiro quadro é o estado atual e o último é o resultado final. A estrutura do imóvel é mantida; só a transformação acontece.'
+                    : 'Ajuste fino do movimento escolhido acima. A foto enviada é o primeiro quadro e o ambiente permanece inalterado.'}
                 </p>
               </div>
+
+              {isTransform && !imageFile2 && (
+                <div className="space-y-2">
+                  <Label>Como o resultado final deve ficar (opcional)</Label>
+                  <Textarea
+                    placeholder="ex.: fachada reformada, limpa e pintada, jardim aparado"
+                    value={stagingPrompt}
+                    onChange={(e) => setStagingPrompt(e.target.value)}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Usado só quando você não envia um quadro final — guia a IA ao gerar o "depois".
+                  </p>
+                </div>
+              )}
 
               <ApiKeyField
                 value={apiKey}

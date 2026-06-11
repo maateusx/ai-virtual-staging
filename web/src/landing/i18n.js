@@ -26,7 +26,7 @@ export const translations = {
     },
     modes: {
       label: 'Recursos',
-      title: 'Cinco modos para cada situação',
+      title: 'Seis modos para cada situação',
       subtitle: 'Da casa vazia ao imóvel ocupado — uma ferramenta para todo o fluxo.',
       items: [
         { key: 'furnish', name: 'Mobiliar', desc: 'Adicione móveis e decoração a ambientes vazios em segundos.' },
@@ -34,7 +34,34 @@ export const translations = {
         { key: 'declutter', name: 'Minimizar', desc: 'Tire o excesso e mantenha só o essencial do ambiente.' },
         { key: 'enhance', name: 'Melhorar qualidade', desc: 'Recupere nitidez e detalhe em alta resolução, sem mudar a cena.' },
         { key: 'edit', name: 'Editar', desc: 'Pinte uma área e descreva a mudança — só ela é transformada.' },
+        { key: 'video', name: 'Transformar em vídeo', desc: 'Transforme suas imagens em vídeos cinematográficos com movimento de câmera.' },
       ],
+    },
+    gallery: {
+      label: 'Resultados',
+      title: 'Veja a transformação de cada modo',
+      subtitle: 'Arraste para comparar o antes e o depois — todos gerados pela ferramenta.',
+    },
+    roi: {
+      label: 'Economia',
+      title: 'Quanto você economiza por mês',
+      subtitle: 'Compare o custo do staging virtual terceirizado com o do decorar.ai.',
+      sliderLabel: 'Fotos por mês',
+      legacyLabel: 'Staging virtual tradicional',
+      oursLabel: 'decorar.ai',
+      savingsLabel: 'Sua economia',
+      perMonth: '/mês',
+      perYearLabel: 'Economia anual',
+      disclaimer:
+        '* Estimativa aproximada. A economia real varia conforme volume, resolução e plano.',
+      cta: 'Começar grátis',
+      currency: 'R$',
+      locale: 'pt-BR',
+      legacyPerPhoto: 80,
+      ourPerPhoto: 0.65,
+      minPhotos: 10,
+      maxPhotos: 400,
+      defaultPhotos: 60,
     },
     how: {
       label: 'Como funciona',
@@ -126,6 +153,19 @@ export const translations = {
       ],
       cta: 'Gerar um vídeo',
       caption: 'Foto → vídeo em poucos minutos',
+      steps: { photo: 'Foto', video: 'Vídeo' },
+    },
+    reforma: {
+      label: 'Reforma com IA',
+      title: 'Mostre o imóvel reformado antes da obra',
+      subtitle:
+        'Gere um vídeo do espaço transformado a partir de uma única foto — pisos, paredes, acabamentos e mobília renovados, sem gastar com obra.',
+      bullets: [
+        { name: 'Antes e depois em movimento', desc: 'Mostre o potencial do imóvel num vídeo, sem reformar nada.' },
+        { name: 'Acabamentos renovados', desc: 'Pisos, paredes e iluminação repaginados de forma realista.' },
+        { name: 'Convença na hora', desc: 'Ajude o cliente a enxergar o resultado final do projeto.' },
+      ],
+      cta: 'Gerar uma reforma',
     },
     tech: {
       label: 'Recursos',
@@ -203,7 +243,6 @@ export const translations = {
     testimonials: {
       label: 'Depoimentos',
       title: 'Quem usa, vende mais rápido',
-      note: 'Depoimentos ilustrativos — substitua pelos reais.',
       items: [
         { quote: 'Mobiliei um apartamento vazio em segundos e o anúncio começou a receber visitas na mesma semana.', name: 'Ana Ribeiro', role: 'Corretora autônoma' },
         { quote: 'Padronizamos as fotos de toda a carteira sem contratar staging físico. O custo despencou.', name: 'Marcos Lima', role: 'Imobiliária Lima' },
@@ -265,7 +304,7 @@ export const translations = {
     },
     modes: {
       label: 'Recursos',
-      title: 'Cinco modos para cada situación',
+      title: 'Seis modos para cada situación',
       subtitle: 'De la casa vacía al inmueble ocupado — una herramienta para todo el flujo.',
       items: [
         { key: 'furnish', name: 'Amueblar', desc: 'Agrega muebles y decoración a ambientes vacíos en segundos.' },
@@ -273,7 +312,34 @@ export const translations = {
         { key: 'declutter', name: 'Despejar', desc: 'Elimina el exceso y conserva solo lo esencial del ambiente.' },
         { key: 'enhance', name: 'Mejorar calidad', desc: 'Recupera nitidez y detalle en alta resolución, sin cambiar la escena.' },
         { key: 'edit', name: 'Editar', desc: 'Pinta un área y describe el cambio — solo ella se transforma.' },
+        { key: 'video', name: 'Convertir en video', desc: 'Convierte tus imágenes en videos cinematográficos con movimiento de cámara.' },
       ],
+    },
+    gallery: {
+      label: 'Resultados',
+      title: 'Mira la transformación de cada modo',
+      subtitle: 'Arrastra para comparar el antes y el después — todos generados por la herramienta.',
+    },
+    roi: {
+      label: 'Ahorro',
+      title: 'Cuánto ahorras por mes',
+      subtitle: 'Compara el costo del staging virtual tercerizado con el de decorar.ai.',
+      sliderLabel: 'Fotos por mes',
+      legacyLabel: 'Staging virtual tradicional',
+      oursLabel: 'decorar.ai',
+      savingsLabel: 'Tu ahorro',
+      perMonth: '/mes',
+      perYearLabel: 'Ahorro anual',
+      disclaimer:
+        '* Estimación aproximada. El ahorro real varía según volumen, resolución y plan.',
+      cta: 'Empezar gratis',
+      currency: 'US$',
+      locale: 'es',
+      legacyPerPhoto: 15,
+      ourPerPhoto: 0.12,
+      minPhotos: 10,
+      maxPhotos: 400,
+      defaultPhotos: 60,
     },
     how: {
       label: 'Cómo funciona',
@@ -365,6 +431,19 @@ export const translations = {
       ],
       cta: 'Generar un video',
       caption: 'Foto → video en pocos minutos',
+      steps: { photo: 'Foto', video: 'Video' },
+    },
+    reforma: {
+      label: 'Reforma con IA',
+      title: 'Muestra el inmueble reformado antes de la obra',
+      subtitle:
+        'Genera un video del espacio transformado a partir de una sola foto — pisos, paredes, acabados y muebles renovados, sin gastar en obra.',
+      bullets: [
+        { name: 'Antes y después en movimiento', desc: 'Muestra el potencial del inmueble en video, sin reformar nada.' },
+        { name: 'Acabados renovados', desc: 'Pisos, paredes e iluminación renovados de forma realista.' },
+        { name: 'Convence al instante', desc: 'Ayuda al cliente a visualizar el resultado final del proyecto.' },
+      ],
+      cta: 'Generar una reforma',
     },
     tech: {
       label: 'Recursos',
@@ -442,7 +521,6 @@ export const translations = {
     testimonials: {
       label: 'Testimonios',
       title: 'Quien lo usa, vende más rápido',
-      note: 'Testimonios ilustrativos — reemplázalos por los reales.',
       items: [
         { quote: 'Amueblé un departamento vacío en segundos y el anuncio empezó a recibir visitas esa misma semana.', name: 'Ana Ribeiro', role: 'Agente independiente' },
         { quote: 'Estandarizamos las fotos de toda la cartera sin contratar staging físico. El costo se desplomó.', name: 'Marcos Lima', role: 'Inmobiliaria Lima' },
@@ -504,7 +582,7 @@ export const translations = {
     },
     modes: {
       label: 'Features',
-      title: 'Five modes for every situation',
+      title: 'Six modes for every situation',
       subtitle: 'From empty homes to occupied listings — one tool for the whole flow.',
       items: [
         { key: 'furnish', name: 'Furnish', desc: 'Add furniture and decor to empty rooms in seconds.' },
@@ -512,7 +590,34 @@ export const translations = {
         { key: 'declutter', name: 'Declutter', desc: 'Strip the excess and keep only what matters.' },
         { key: 'enhance', name: 'Enhance', desc: 'Recover sharpness and detail in high resolution, scene intact.' },
         { key: 'edit', name: 'Edit', desc: 'Paint an area, describe the change — only it transforms.' },
+        { key: 'video', name: 'Turn into video', desc: 'Turn your images into cinematic videos with smooth camera motion.' },
       ],
+    },
+    gallery: {
+      label: 'Results',
+      title: 'See the transformation for each mode',
+      subtitle: 'Drag to compare before and after — all generated by the tool.',
+    },
+    roi: {
+      label: 'Savings',
+      title: 'How much you save per month',
+      subtitle: 'Compare the cost of outsourced virtual staging with decorar.ai.',
+      sliderLabel: 'Photos per month',
+      legacyLabel: 'Traditional virtual staging',
+      oursLabel: 'decorar.ai',
+      savingsLabel: 'Your savings',
+      perMonth: '/mo',
+      perYearLabel: 'Annual savings',
+      disclaimer:
+        '* Approximate estimate. Actual savings vary by volume, resolution and plan.',
+      cta: 'Start free',
+      currency: '$',
+      locale: 'en-US',
+      legacyPerPhoto: 15,
+      ourPerPhoto: 0.12,
+      minPhotos: 10,
+      maxPhotos: 400,
+      defaultPhotos: 60,
     },
     how: {
       label: 'How it works',
@@ -604,6 +709,19 @@ export const translations = {
       ],
       cta: 'Generate a video',
       caption: 'Photo → video in minutes',
+      steps: { photo: 'Photo', video: 'Video' },
+    },
+    reforma: {
+      label: 'AI renovation',
+      title: 'Show the renovated home before the work',
+      subtitle:
+        'Generate a video of the transformed space from a single photo — floors, walls, finishes and furniture renewed, with no renovation cost.',
+      bullets: [
+        { name: 'Before and after in motion', desc: 'Show the property’s potential in a video, with no actual remodel.' },
+        { name: 'Renewed finishes', desc: 'Floors, walls and lighting refreshed in a realistic way.' },
+        { name: 'Convince on the spot', desc: 'Help clients picture the final result of the project.' },
+      ],
+      cta: 'Generate a renovation',
     },
     tech: {
       label: 'Features',
@@ -681,7 +799,6 @@ export const translations = {
     testimonials: {
       label: 'Testimonials',
       title: 'People who use it sell faster',
-      note: 'Sample testimonials — replace with real ones.',
       items: [
         { quote: 'I furnished an empty apartment in seconds and the listing started getting showings that same week.', name: 'Ana Ribeiro', role: 'Independent agent' },
         { quote: 'We standardized photos across the whole portfolio without hiring physical staging. Costs plummeted.', name: 'Marcos Lima', role: 'Lima Realty' },

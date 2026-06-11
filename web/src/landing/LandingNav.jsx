@@ -35,7 +35,7 @@ export function LandingNav() {
       >
         <a href="#top" className="flex items-center gap-1.5 text-[17px] font-semibold tracking-[-0.02em] text-lp-ink">
           <Sparkles className="h-5 w-5 text-brand-pink" />
-          decorar<span className="text-brand-pink">.ai</span>
+          <span>decorar<span className="text-brand-pink">.AI</span></span>
         </a>
 
         {/* Desktop menu */}

@@ -77,6 +77,12 @@ export function trackJob({ jobId, model, operation, operationName, apiKey, logge
         resolution: job?.resolution,
         durationSeconds: job?.duration_seconds,
       });
+      // Fold in the AUTO transform final-frame cost stashed at job creation
+      // (kept as a separate line item; the video usd/brl stay video-only).
+      if (job?.cost?.staging_usd != null) {
+        cost.staging_usd = job.cost.staging_usd;
+        cost.staging_brl = job.cost.staging_brl;
+      }
       const startedAt = job?.started_at?.getTime() ?? Date.now();
 
       await VideoJob.findByIdAndUpdate(jobId, {

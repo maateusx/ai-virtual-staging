@@ -8,11 +8,12 @@ import { cn } from '@/lib/utils';
 // Each card carries a draggable before/after slider (like the hero) so the
 // transformation for that mode can be revealed in place.
 const STYLES = {
-  furnish: { bg: 'bg-brand-pink', text: 'text-white', sub: 'text-white/80', before: '/landing/furnish-before.jpg', after: '/landing/furnish-after.jpg' },
-  empty: { bg: 'bg-brand-teal', text: 'text-white', sub: 'text-white/75', before: '/landing/empty-before.jpg', after: '/landing/empty-after.jpg' },
+  furnish: { bg: 'bg-brand-pink', text: 'text-white', sub: 'text-white/80', before: '/landing/hero-before.jpg', after: '/landing/hero-after.jpg' },
+  empty: { bg: 'bg-brand-teal', text: 'text-white', sub: 'text-white/75', before: '/landing/bagunca-antes.jpg', after: '/landing/bagunca-depois.jpg' },
   declutter: { bg: 'bg-brand-lavender', text: 'text-lp-ink', sub: 'text-lp-ink/70', before: '/landing/declutter-before.jpg', after: '/landing/declutter-after.jpg' },
   enhance: { bg: 'bg-brand-peach', text: 'text-lp-ink', sub: 'text-lp-ink/70', before: '/landing/enhance-before.jpg', after: '/landing/enhance-after.jpg' },
   edit: { bg: 'bg-brand-ochre', text: 'text-lp-ink', sub: 'text-lp-ink/70', before: '/landing/hero-before.jpg', after: '/landing/hero-after.jpg' },
+  video: { bg: 'bg-brand-pink', text: 'text-white', sub: 'text-white/80', video: '/landing/video-moving.mp4', poster: '/landing/video-moving-poster.jpg' },
 };
 
 export function FeatureCards() {
@@ -37,13 +38,25 @@ export function FeatureCards() {
               <h3 className={cn('text-xl font-semibold', s.text)}>{m.name}</h3>
               <p className={cn('mt-2 text-sm leading-relaxed', s.sub)}>{m.desc}</p>
               <div className="mt-6">
-                <LandingBeforeAfter
-                  before={s.before}
-                  after={s.after}
-                  beforeLabel={t.hero.before}
-                  afterLabel={t.hero.after}
-                  imgClassName="block aspect-[4/3] w-full object-cover"
-                />
+                {s.video ? (
+                  <video
+                    className="block aspect-[4/3] w-full rounded-lp-lg bg-surface-strong object-cover"
+                    src={s.video}
+                    poster={s.poster}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                  />
+                ) : (
+                  <LandingBeforeAfter
+                    before={s.before}
+                    after={s.after}
+                    beforeLabel={t.hero.before}
+                    afterLabel={t.hero.after}
+                    imgClassName="block aspect-[4/3] w-full object-cover"
+                  />
+                )}
               </div>
             </div>
           );

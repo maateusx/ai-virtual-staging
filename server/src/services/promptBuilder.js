@@ -169,3 +169,39 @@ export function composePrompt(parameters, selections, extraPrompt = '', mode = D
     fragments,
   };
 }
+
+// --- Final-frame ("after") generation for the video 'transform' style ----------
+// Produces the renovated/finished image of the SAME property, used as the last
+// frame of a transformation video when the user doesn't upload one. Unlike
+// PRESERVE (which only allows furniture to change), this keeps the building's
+// structure fixed but explicitly PERMITS the renovation itself — clearing
+// garbage/vegetation, cleaning, repairing and repainting surfaces.
+const FINAL_FRAME_PRESERVE =
+  'This is the same property, photographed from the exact same camera angle, ' +
+  'position, zoom, framing and perspective. Keep the building structure, walls, ' +
+  'roof, windows, doors, columns and overall proportions in the same place and ' +
+  'geometry as the original — do not move, redraw or reinterpret the architecture, ' +
+  'and do not add new rooms, openings or separate structures. Only the renovation ' +
+  'itself may change: cleared garbage and overgrown vegetation, and cleaned, ' +
+  'repaired and freshly painted surfaces. Photorealistic, matching the original ' +
+  'framing and lighting.';
+
+export const DEFAULT_FINAL_FRAME_PROMPT =
+  'Show this property fully renovated and finished: clear away all garbage, ' +
+  'debris and overgrown grass and weeds, clean and repair the exterior, and ' +
+  'apply fresh paint, leaving it polished, well-maintained and move-in ready.';
+
+/**
+ * Compose the image prompt that generates the "after" (final) frame for an AUTO
+ * transform video. The editable text describes the desired finished state and is
+ * always wrapped with FINAL_FRAME_PRESERVE so the structure/geometry is kept and
+ * the generated frame matches the first frame's framing (Veo needs same aspect).
+ *
+ * @param {string} editablePrompt  desired finished state (optional)
+ * @returns {string} the composed image prompt
+ */
+export function composeFinalFramePrompt(editablePrompt = '') {
+  const detail = (editablePrompt || '').trim() || DEFAULT_FINAL_FRAME_PROMPT;
+  const text = detail.endsWith('.') ? detail : `${detail}.`;
+  return `${text} ${FINAL_FRAME_PRESERVE}`;
+}

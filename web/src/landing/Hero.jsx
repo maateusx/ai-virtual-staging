@@ -103,7 +103,7 @@ export function Hero() {
           </div>
         ))}
       </div>
-      <div className="relative mx-auto grid max-w-[1280px] items-center gap-12 px-6 pb-16 pt-12 md:pb-24 md:pt-20 lg:grid-cols-[7fr_5fr] lg:gap-10">
+      <div className="relative mx-auto grid max-w-[1280px] items-center gap-12 px-6 pb-16 pt-12 md:pb-24 md:pt-20 lg:grid-cols-[9fr_12fr] lg:gap-10">
         <div>
           <span className="inline-flex items-center rounded-pill bg-surface-card px-3 py-1 text-xs font-semibold uppercase tracking-[1.5px] text-lp-muted">
             {t.hero.badge}

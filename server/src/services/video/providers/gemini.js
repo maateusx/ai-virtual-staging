@@ -36,6 +36,8 @@ async function start({
   resolution,
   durationSeconds,
   audio,
+  lastFrameBuffer,
+  lastFrameMime,
   apiKey,
 }) {
   const userKey = apiKey?.trim();
@@ -44,22 +46,32 @@ async function start({
   }
   try {
     const ai = await getClient(userKey);
+    const config = {
+      aspectRatio,
+      resolution,
+      durationSeconds,
+      numberOfVideos: 1,
+      // NOTE: do not pass `generateAudio`. The Gemini Developer API rejects it
+      // outright (the SDK throws "generateAudio parameter is not supported in
+      // Gemini API." for any value, even false) — it's a Vertex-only toggle.
+      // Veo 3 emits audio by default; Veo 2 has none. The `audio` arg is kept
+      // for the provider contract but intentionally unused here.
+      personGeneration: 'allow_adult',
+    };
+    // First→last frame interpolation (transform style). Only the Veo 3.1 family
+    // supports it; the route gates this so we never reach here with an unsupported
+    // model. The first frame is `image`; this is the target final frame.
+    if (lastFrameBuffer) {
+      config.lastFrame = {
+        imageBytes: lastFrameBuffer.toString('base64'),
+        mimeType: lastFrameMime,
+      };
+    }
     const operation = await ai.models.generateVideos({
       model,
       prompt: prompt || undefined,
       image: { imageBytes: imageBuffer.toString('base64'), mimeType: mime },
-      config: {
-        aspectRatio,
-        resolution,
-        durationSeconds,
-        numberOfVideos: 1,
-        // NOTE: do not pass `generateAudio`. The Gemini Developer API rejects it
-        // outright (the SDK throws "generateAudio parameter is not supported in
-        // Gemini API." for any value, even false) — it's a Vertex-only toggle.
-        // Veo 3 emits audio by default; Veo 2 has none. The `audio` arg is kept
-        // for the provider contract but intentionally unused here.
-        personGeneration: 'allow_adult',
-      },
+      config,
     });
     return { operationName: operation.name, operation };
   } catch (err) {

@@ -18,6 +18,8 @@ export const VIDEO_MODELS = {
     resolutions: ['720p', '1080p'],
     durations: [4, 6, 8],
     supportsAudio: true,
+    // Last frame (first→last interpolation) is a Veo 3.1 family capability.
+    supportsLastFrame: true,
     // USD per second of output, by resolution.
     pricePerSecondUsd: { '720p': 0.4, '1080p': 0.4 },
     defaults: { aspectRatio: '16:9', resolution: '720p', duration: 8 },
@@ -29,6 +31,7 @@ export const VIDEO_MODELS = {
     resolutions: ['720p', '1080p'],
     durations: [4, 6, 8],
     supportsAudio: true,
+    supportsLastFrame: true,
     pricePerSecondUsd: { '720p': 0.1, '1080p': 0.12 },
     defaults: { aspectRatio: '16:9', resolution: '720p', duration: 8 },
   },
@@ -39,6 +42,7 @@ export const VIDEO_MODELS = {
     resolutions: ['720p', '1080p'],
     durations: [4, 6, 8],
     supportsAudio: true,
+    supportsLastFrame: true,
     pricePerSecondUsd: { '720p': 0.05, '1080p': 0.08 },
     defaults: { aspectRatio: '16:9', resolution: '720p', duration: 8 },
   },
@@ -49,6 +53,7 @@ export const VIDEO_MODELS = {
     resolutions: ['720p'], // 720p only
     durations: [5, 6, 7, 8], // Veo 2 is 5–8s
     supportsAudio: false, // no native audio
+    supportsLastFrame: false, // no first→last frame interpolation
     pricePerSecondUsd: { '720p': 0.35 },
     defaults: { aspectRatio: '16:9', resolution: '720p', duration: 6 },
   },
@@ -58,6 +63,12 @@ export const DEFAULT_VIDEO_MODEL = 'veo-3.1-fast-generate-preview';
 
 export function getModelDescriptor(modelId) {
   return VIDEO_MODELS[modelId] ?? null;
+}
+
+// Whether a model supports sending a last frame (first→last interpolation), which
+// the 'transform' style requires. Source of truth for gating that style.
+export function modelSupportsLastFrame(modelId) {
+  return !!getModelDescriptor(modelId)?.supportsLastFrame;
 }
 
 // Public payload for /v1/video/config — reshaped into the arrays/snake_case the
@@ -72,6 +83,7 @@ export function publicVideoConfig() {
       resolutions: m.resolutions,
       durations: m.durations,
       supports_audio: m.supportsAudio,
+      supports_last_frame: !!m.supportsLastFrame,
       price_per_second_usd: m.pricePerSecondUsd,
       defaults: {
         aspect_ratio: m.defaults.aspectRatio,

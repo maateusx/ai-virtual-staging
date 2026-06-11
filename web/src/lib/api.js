@@ -77,15 +77,31 @@ export const api = {
 
   // Start a video job. Returns { job_id, status } immediately (202); the result
   // is fetched by polling getVideo(id) until status === 'done'.
-  createVideo: ({ image, model, motion, aspectRatio, resolution, duration, prompt, audio, apiKey }) => {
+  createVideo: ({
+    image,
+    image2,
+    style,
+    model,
+    motion,
+    aspectRatio,
+    resolution,
+    duration,
+    prompt,
+    stagingPrompt,
+    audio,
+    apiKey,
+  }) => {
     const fd = new FormData();
     fd.append('image', image);
+    if (image2) fd.append('image2', image2); // 'transform' style: final frame (MANUAL)
+    if (style) fd.append('style', style);
     if (model) fd.append('model', model);
     if (motion) fd.append('motion', motion);
     if (aspectRatio) fd.append('aspect_ratio', aspectRatio);
     if (resolution) fd.append('resolution', resolution);
     if (duration != null) fd.append('duration', String(duration));
     if (prompt) fd.append('prompt', prompt);
+    if (stagingPrompt) fd.append('staging_prompt', stagingPrompt); // AUTO "after" frame
     if (audio) fd.append('audio', 'true');
     if (apiKey) fd.append('gemini_api_key', apiKey);
     return fetch(`${API_URL}/v1/video`, { method: 'POST', body: fd }).then(handle);

@@ -30,6 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { CardSelect } from '@/components/ui/CardSelect';
 import { DisclosureToggle } from '@/components/ui/Disclosure';
+import { useSeo } from '@/lib/useSeo';
 
 // Icon + usage hint per aspect-ratio preset id (see server outputFormats.js).
 // Descriptions point to where each format fits best on social media.
@@ -63,6 +64,13 @@ const ASPECT_FIT_META = {
 };
 
 export function StagingPage() {
+  useSeo({
+    title: 'Editor de fotos',
+    description:
+      'Mobilie, esvazie, minimize, melhore a qualidade ou edite fotos de imóveis com IA — em tempo real, direto no navegador.',
+    path: '/app',
+  });
+
   const {
     parameters,
     loadConfig,

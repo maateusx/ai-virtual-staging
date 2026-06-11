@@ -1,13 +1,14 @@
 import { Link } from 'react-router-dom';
-import { Play, Camera, Film, Share2, ArrowRight } from 'lucide-react';
+import { Camera, Film, Share2, ArrowRight } from 'lucide-react';
 import { useLang } from './i18n';
 import { LandingButton } from './LandingButton';
+import { ProcessTimeline } from './ProcessTimeline';
 
 const BULLET_ICONS = [Camera, Film, Share2];
 
 // Video feature band — sells the photo→video capability (the /app/video page),
-// which the rest of the landing doesn't surface. Deep-teal media card on the
-// right per the design system; the poster is a decorative stand-in (no asset).
+// which the rest of the landing doesn't surface. The right column shows the
+// photo→video process as a timeline (assets served from /public/landing).
 export function VideoShowcase() {
   const { t } = useLang();
   return (
@@ -47,22 +48,13 @@ export function VideoShowcase() {
           </div>
         </div>
 
-        <div className="relative aspect-[4/3] overflow-hidden rounded-lp-xl bg-brand-teal">
-          <div
-            aria-hidden
-            className="absolute inset-0 opacity-40"
-            style={{
-              backgroundImage:
-                'radial-gradient(120% 80% at 30% 20%, rgba(255,255,255,0.18), transparent 60%)',
-            }}
-          />
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 shadow-popover">
-              <Play className="h-6 w-6 translate-x-0.5 text-brand-teal" fill="currentColor" />
-            </div>
-            <p className="text-sm font-medium text-white/80">{t.video.caption}</p>
-          </div>
-        </div>
+        <ProcessTimeline
+          image="/landing/video-moving-poster.jpg"
+          video="/landing/video-moving.mp4"
+          labels={t.video.steps}
+          mediaClassName="scale-[1.19]"
+          compactPhoto
+        />
       </div>
     </section>
   );

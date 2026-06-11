@@ -16,7 +16,7 @@ export function LandingFooter() {
           <div>
             <span className="flex items-center gap-1.5 text-[17px] font-semibold tracking-[-0.02em] text-lp-ink">
               <Sparkles className="h-5 w-5 text-brand-pink" />
-              decorar<span className="text-brand-pink">.ai</span>
+              <span>decorar<span className="text-brand-pink">.AI</span></span>
             </span>
             <p className="mt-3 max-w-xs text-sm text-lp-muted">{t.footer.tagline}</p>
             <LangToggle className="mt-5" />

@@ -2,7 +2,7 @@ import { Quote } from 'lucide-react';
 import { useLang } from './i18n';
 
 // Customer testimonials on cream cards. Quotes are sample placeholders today
-// (see t.testimonials.note) — swap for real ones as they come in.
+// — swap for real ones as they come in.
 export function Testimonials() {
   const { t } = useLang();
   return (
@@ -35,8 +35,6 @@ export function Testimonials() {
           </figure>
         ))}
       </div>
-
-      <p className="mt-8 text-center text-xs text-lp-muted">{t.testimonials.note}</p>
     </section>
   );
 }

@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { CardSelect } from '@/components/ui/CardSelect';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { useSeo } from '@/lib/useSeo';
 
 const PARAMETER_TYPES = [
   {
@@ -26,6 +27,12 @@ const PARAMETER_TYPES = [
 ];
 
 export function ConfigPage() {
+  useSeo({
+    title: 'Configurações',
+    description: 'Configure os parâmetros e opções da sua conta no decorar.ai.',
+    path: '/app/config',
+  });
+
   const {
     parameters,
     load,
