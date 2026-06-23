@@ -5,8 +5,10 @@ dist/
 *.log
 .DS_Store
 
-# uploaded / generated images
+# uploaded / generated images & videos
 server/uploads/in/*
 server/uploads/out/*
+server/uploads/vid/*
 !server/uploads/in/.gitkeep
 !server/uploads/out/.gitkeep
+!server/uploads/vid/.gitkeep

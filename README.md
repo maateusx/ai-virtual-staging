@@ -93,8 +93,12 @@ web/src
 | `POST` | `/v1/admin/parameters/:id/options` | Adiciona opção |
 | `PATCH`/`DELETE` | `/v1/admin/parameters/:id/options/:optionId` | Edita/remove opção |
 
-> As rotas `/v1/admin/*` assumem uma sessão de admin autenticada (fora do escopo
-> deste MVP — plugue o middleware de auth em `server/src/routes/admin.js`).
+> ⚠️ **Aviso de segurança:** as rotas `/v1/admin/*` **não têm autenticação** neste
+> MVP — qualquer um com acesso à API pode criar/editar/remover parâmetros. Elas
+> assumem uma sessão de admin já autenticada (fora do escopo desta versão). **Não
+> faça deploy público sem antes plugar um middleware de auth** em
+> `server/src/routes/admin.js`. Como está, rode apenas localmente ou em rede
+> confiável.
 
 ## Fora desta versão (fases futuras)
 
