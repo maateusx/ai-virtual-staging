@@ -23,6 +23,32 @@ guardada só no navegador).
 
 ---
 
+## 📸 Exemplos
+
+### Modos de imagem (antes → depois)
+
+| Mobiliar | Esvaziar |
+|---|---|
+| <img src="web/public/landing/furnish-before.jpg" width="380" alt="Cômodo vazio"> | <img src="web/public/landing/empty-before.jpg" width="380" alt="Cômodo mobiliado"> |
+| <img src="web/public/landing/furnish-after.jpg" width="380" alt="Cômodo mobiliado"> | <img src="web/public/landing/empty-after.jpg" width="380" alt="Cômodo esvaziado"> |
+
+| Organizar (declutter) | Melhorar (enhance) |
+|---|---|
+| <img src="web/public/landing/declutter-before.jpg" width="380" alt="Cômodo bagunçado"> | <img src="web/public/landing/enhance-before.jpg" width="380" alt="Foto de baixa qualidade"> |
+| <img src="web/public/landing/declutter-after.jpg" width="380" alt="Cômodo organizado"> | <img src="web/public/landing/enhance-after.jpg" width="380" alt="Foto melhorada"> |
+
+### Vídeo (imagem → vídeo)
+
+O estilo `transform` transforma a foto "antes" em um timelapse curto de reforma,
+e o `motion` movimenta a câmera por um cômodo estático. Clique no pôster para
+assistir:
+
+| Timelapse de reforma (`transform`) | Movimento de câmera (`motion`) |
+|---|---|
+| [<img src="web/public/landing/video-reforma-poster.jpg" width="380" alt="Vídeo timelapse de reforma">](https://github.com/maateusx/ai-virtual-staging/raw/main/web/public/landing/video-reforma.mp4) | [<img src="web/public/landing/video-moving-poster.jpg" width="380" alt="Vídeo movimento de câmera">](https://github.com/maateusx/ai-virtual-staging/raw/main/web/public/landing/video-moving.mp4) |
+
+---
+
 ## ✨ Funcionalidades
 
 ### Imagem (síncrono)

@@ -22,6 +22,31 @@ the UI and kept only in the browser).
 
 ---
 
+## 📸 Examples
+
+### Image modes (before → after)
+
+| Furnish | Empty |
+|---|---|
+| <img src="web/public/landing/furnish-before.jpg" width="380" alt="Empty room"> | <img src="web/public/landing/empty-before.jpg" width="380" alt="Furnished room"> |
+| <img src="web/public/landing/furnish-after.jpg" width="380" alt="Furnished room"> | <img src="web/public/landing/empty-after.jpg" width="380" alt="Emptied room"> |
+
+| Declutter | Enhance |
+|---|---|
+| <img src="web/public/landing/declutter-before.jpg" width="380" alt="Cluttered room"> | <img src="web/public/landing/enhance-before.jpg" width="380" alt="Low quality photo"> |
+| <img src="web/public/landing/declutter-after.jpg" width="380" alt="Decluttered room"> | <img src="web/public/landing/enhance-after.jpg" width="380" alt="Enhanced photo"> |
+
+### Video (image → video)
+
+The `transform` style turns a "before" photo into a short renovation timelapse,
+and `motion` moves the camera through a frozen room. Click a poster to watch:
+
+| Renovation timelapse (`transform`) | Camera motion (`motion`) |
+|---|---|
+| [<img src="web/public/landing/video-reforma-poster.jpg" width="380" alt="Renovation timelapse video">](https://github.com/maateusx/ai-virtual-staging/raw/main/web/public/landing/video-reforma.mp4) | [<img src="web/public/landing/video-moving-poster.jpg" width="380" alt="Camera motion video">](https://github.com/maateusx/ai-virtual-staging/raw/main/web/public/landing/video-moving.mp4) |
+
+---
+
 ## ✨ Features
 
 ### Image (synchronous)
