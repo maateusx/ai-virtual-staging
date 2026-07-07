@@ -1,5 +1,7 @@
 # Staging with AI — AI Virtual Staging
 
+<img src="web/public/landing/og-image.jpg" alt="Staging with AI — turn real estate photos into staged images in seconds" width="100%">
+
 > **Read this in other languages:** **English** · [Português](README.pt-BR.md)
 
 > Virtual staging tool for real estate: the user uploads a photo of a room and
@@ -24,17 +26,38 @@ the UI and kept only in the browser).
 
 ## 📸 Examples
 
-### Image modes (before → after)
+Each pair below shows the **input photo (before)** on the left and the
+**AI-generated result (after)** on the right.
 
-| Furnish | Empty |
-|---|---|
-| <img src="web/public/landing/furnish-before.jpg" width="380" alt="Empty room"> | <img src="web/public/landing/empty-before.jpg" width="380" alt="Furnished room"> |
-| <img src="web/public/landing/furnish-after.jpg" width="380" alt="Furnished room"> | <img src="web/public/landing/empty-after.jpg" width="380" alt="Emptied room"> |
+### `furnish` — furnish an empty room
 
-| Declutter | Enhance |
+The model reads the empty room's geometry, lighting and perspective, then adds a
+believable furniture layout (sofa, coffee table, rug, plant, décor) that fits the
+walls, windows and floor — without touching the architecture.
+
+| Before | After |
 |---|---|
-| <img src="web/public/landing/declutter-before.jpg" width="380" alt="Cluttered room"> | <img src="web/public/landing/enhance-before.jpg" width="380" alt="Low quality photo"> |
-| <img src="web/public/landing/declutter-after.jpg" width="380" alt="Decluttered room"> | <img src="web/public/landing/enhance-after.jpg" width="380" alt="Enhanced photo"> |
+| <img src="web/public/landing/furnish-before.jpg" width="420" alt="Empty living room"> | <img src="web/public/landing/furnish-after.jpg" width="420" alt="Same room furnished by AI"> |
+
+### `empty` — empty an occupied room
+
+Starting from a cluttered space (moving boxes, furniture, cables), the model
+removes every object and reconstructs the floor, walls and built-ins that were
+hidden behind them, leaving a clean, empty room.
+
+| Before | After |
+|---|---|
+| <img src="web/public/landing/bagunca-antes.jpg" width="420" alt="Room full of moving boxes"> | <img src="web/public/landing/bagunca-depois.jpg" width="420" alt="Same room emptied by AI"> |
+
+### `enhance` — improve quality
+
+The model upscales and cleans up a soft, low-quality photo: sharper detail,
+corrected lighting and white balance, and reduced blur — while keeping the room
+exactly as it is.
+
+| Before | After |
+|---|---|
+| <img src="web/public/landing/enhance-before.jpg" width="420" alt="Blurry low-quality room photo"> | <img src="web/public/landing/enhance-after.jpg" width="420" alt="Same photo enhanced by AI"> |
 
 ### Video (image → video)
 
@@ -43,7 +66,7 @@ and `motion` moves the camera through a frozen room. Click a poster to watch:
 
 | Renovation timelapse (`transform`) | Camera motion (`motion`) |
 |---|---|
-| [<img src="web/public/landing/video-reforma-poster.jpg" width="380" alt="Renovation timelapse video">](https://github.com/maateusx/ai-virtual-staging/raw/main/web/public/landing/video-reforma.mp4) | [<img src="web/public/landing/video-moving-poster.jpg" width="380" alt="Camera motion video">](https://github.com/maateusx/ai-virtual-staging/raw/main/web/public/landing/video-moving.mp4) |
+| [<img src="web/public/landing/video-reforma-poster.jpg" width="420" alt="Renovation timelapse video">](https://github.com/maateusx/ai-virtual-staging/raw/main/web/public/landing/video-reforma.mp4) | [<img src="web/public/landing/video-moving-poster.jpg" width="420" alt="Camera motion video">](https://github.com/maateusx/ai-virtual-staging/raw/main/web/public/landing/video-moving.mp4) |
 
 ---
 

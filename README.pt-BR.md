@@ -1,5 +1,7 @@
 # Staging with AI — Virtual Staging com IA
 
+<img src="web/public/landing/og-image.jpg" alt="Staging with AI — transforme fotos de imóveis em ambientes prontos em segundos" width="100%">
+
 > **Read this in other languages:** [English](README.md) · **Português**
 
 > Ferramenta de *virtual staging* para imóveis: o usuário envia a foto de um
@@ -25,17 +27,38 @@ guardada só no navegador).
 
 ## 📸 Exemplos
 
-### Modos de imagem (antes → depois)
+Cada par abaixo mostra a **foto de entrada (antes)** à esquerda e o
+**resultado gerado por IA (depois)** à direita.
 
-| Mobiliar | Esvaziar |
-|---|---|
-| <img src="web/public/landing/furnish-before.jpg" width="380" alt="Cômodo vazio"> | <img src="web/public/landing/empty-before.jpg" width="380" alt="Cômodo mobiliado"> |
-| <img src="web/public/landing/furnish-after.jpg" width="380" alt="Cômodo mobiliado"> | <img src="web/public/landing/empty-after.jpg" width="380" alt="Cômodo esvaziado"> |
+### `furnish` — mobiliar um cômodo vazio
 
-| Organizar (declutter) | Melhorar (enhance) |
+O modelo lê a geometria, a iluminação e a perspectiva do cômodo vazio e adiciona
+um layout de móveis convincente (sofá, mesa de centro, tapete, planta, decoração)
+que respeita paredes, janelas e piso — sem alterar a arquitetura.
+
+| Antes | Depois |
 |---|---|
-| <img src="web/public/landing/declutter-before.jpg" width="380" alt="Cômodo bagunçado"> | <img src="web/public/landing/enhance-before.jpg" width="380" alt="Foto de baixa qualidade"> |
-| <img src="web/public/landing/declutter-after.jpg" width="380" alt="Cômodo organizado"> | <img src="web/public/landing/enhance-after.jpg" width="380" alt="Foto melhorada"> |
+| <img src="web/public/landing/furnish-before.jpg" width="420" alt="Sala vazia"> | <img src="web/public/landing/furnish-after.jpg" width="420" alt="Mesma sala mobiliada pela IA"> |
+
+### `empty` — esvaziar um cômodo ocupado
+
+A partir de um espaço bagunçado (caixas de mudança, móveis, fios), o modelo
+remove todos os objetos e reconstrói o piso, as paredes e os armários que estavam
+escondidos atrás deles, deixando o cômodo limpo e vazio.
+
+| Antes | Depois |
+|---|---|
+| <img src="web/public/landing/bagunca-antes.jpg" width="420" alt="Cômodo cheio de caixas de mudança"> | <img src="web/public/landing/bagunca-depois.jpg" width="420" alt="Mesmo cômodo esvaziado pela IA"> |
+
+### `enhance` — melhorar a qualidade
+
+O modelo faz upscale e limpa uma foto suave e de baixa qualidade: mais nitidez,
+iluminação e balanço de branco corrigidos e menos desfoque — mantendo o cômodo
+exatamente como está.
+
+| Antes | Depois |
+|---|---|
+| <img src="web/public/landing/enhance-before.jpg" width="420" alt="Foto de cômodo borrada e de baixa qualidade"> | <img src="web/public/landing/enhance-after.jpg" width="420" alt="Mesma foto melhorada pela IA"> |
 
 ### Vídeo (imagem → vídeo)
 
@@ -45,7 +68,7 @@ assistir:
 
 | Timelapse de reforma (`transform`) | Movimento de câmera (`motion`) |
 |---|---|
-| [<img src="web/public/landing/video-reforma-poster.jpg" width="380" alt="Vídeo timelapse de reforma">](https://github.com/maateusx/ai-virtual-staging/raw/main/web/public/landing/video-reforma.mp4) | [<img src="web/public/landing/video-moving-poster.jpg" width="380" alt="Vídeo movimento de câmera">](https://github.com/maateusx/ai-virtual-staging/raw/main/web/public/landing/video-moving.mp4) |
+| [<img src="web/public/landing/video-reforma-poster.jpg" width="420" alt="Vídeo timelapse de reforma">](https://github.com/maateusx/ai-virtual-staging/raw/main/web/public/landing/video-reforma.mp4) | [<img src="web/public/landing/video-moving-poster.jpg" width="420" alt="Vídeo movimento de câmera">](https://github.com/maateusx/ai-virtual-staging/raw/main/web/public/landing/video-moving.mp4) |
 
 ---
 

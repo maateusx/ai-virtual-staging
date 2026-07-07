@@ -7,9 +7,9 @@ import { cn } from '@/lib/utils';
 // small slider per mode in a grid) with one immersive viewer you switch between
 // modes — same real assets from /public/landing, keyed by mode.
 const MODE_MEDIA = {
-  furnish: { before: '/landing/hero-before.jpg', after: '/landing/hero-after.jpg' },
+  furnish: { before: '/landing/furnish-before.jpg', after: '/landing/furnish-after.jpg' },
   empty: { before: '/landing/bagunca-antes.jpg', after: '/landing/bagunca-depois.jpg' },
-  declutter: { before: '/landing/declutter-before.jpg', after: '/landing/declutter-after.jpg' },
+  declutter: { before: '/landing/bagunca-antes.jpg', after: '/landing/bagunca-depois.jpg' },
   enhance: { before: '/landing/enhance-before.jpg', after: '/landing/enhance-after.jpg' },
   edit: { before: '/landing/hero-before.jpg', after: '/landing/hero-after.jpg' },
 };
