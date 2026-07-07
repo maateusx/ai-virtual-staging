@@ -1,199 +1,201 @@
-# decorar.ai — Virtual Staging com IA
+# Staging with AI — AI Virtual Staging
 
-> Ferramenta de *virtual staging* para imóveis: o usuário envia a foto de um
-> cômodo e recebe a imagem editada (mobiliada, esvaziada, melhorada…) ou um
-> **vídeo** curto a partir da foto — tudo gerado por IA, com estimativa de custo
-> por requisição.
+> **Read this in other languages:** **English** · [Português](README.pt-BR.md)
 
-A IA é o **Google Gemini** (imagem: "Nano Banana"; vídeo: "Veo"), chamado
-diretamente via `@google/genai`. A chave pode vir do servidor (`GEMINI_API_KEY`)
-ou do próprio usuário (**BYOK** — *bring your own key*, colada na interface e
-guardada só no navegador).
+> Virtual staging tool for real estate: the user uploads a photo of a room and
+> gets back an edited image (furnished, emptied, enhanced…) or a short **video**
+> generated from the photo — all AI-generated, with a cost estimate per request.
+
+The AI is **Google Gemini** (image: "Nano Banana"; video: "Veo"), called
+directly via `@google/genai`. The key can come from the server
+(`GEMINI_API_KEY`) or from the user (**BYOK** — *bring your own key*, pasted into
+the UI and kept only in the browser).
 
 ```
 ┌──────────────┐      multipart       ┌──────────────┐     @google/genai    ┌──────────┐
 │  Web (React) │ ───────────────────▶ │ API (Fastify)│ ───────────────────▶ │  Gemini  │
-│  Vite + Zus. │ ◀─── JSON + URLs ──── │  + MongoDB   │ ◀── imagem / vídeo ── │ Veo/Nano │
+│  Vite + Zus. │ ◀─── JSON + URLs ──── │  + MongoDB   │ ◀── image / video ─── │ Veo/Nano │
 └──────────────┘                      └──────┬───────┘                      └──────────┘
-                                             │ disco local (/uploads)
-                                             ▼  servido estaticamente
+                                             │ local disk (/uploads)
+                                             ▼  served statically
 ```
 
 ---
 
-## ✨ Funcionalidades
+## ✨ Features
 
-### Imagem (síncrono)
-- **Modos:** `furnish` (mobiliar cômodo vazio), `empty` (esvaziar), `declutter`
-  (minimizar/remover excesso), `enhance` (melhorar qualidade/upscale) e `edit`
-  (edição localizada guiada por **máscara** pintada — só a região muda).
-- **Parâmetros de estilo configuráveis:** estilo, tipo de cômodo, densidade de
-  mobília etc. **não são fixos em código** — são cadastrados numa tela de admin e
-  cada opção carrega um *fragmento de prompt* concatenado na instrução final.
-- **Formato de saída:** proporção (`original`, 21:9, 16:9, 1:1, 3:4, 9:16, 4:3) e
-  resolução (1K/2K/4K). A proporção é atingida por **recorte**, **barras** ou
-  **outpaint com IA** (expandir a cena).
-- **1 a 4 variações** por requisição (geradas em paralelo).
-- **Preview do prompt:** a UI mostra e permite **editar** o prompt final antes de
-  rodar uma geração real (e cobrada).
-- **Marca d'água** opcional: um PNG estampado localmente com `sharp` (sem custo de
-  modelo), com posição, tamanho, opacidade e cor configuráveis.
+### Image (synchronous)
+- **Modes:** `furnish` (furnish an empty room), `empty` (empty it out),
+  `declutter` (minimize/remove excess), `enhance` (improve quality/upscale) and
+  `edit` (localized editing guided by a painted **mask** — only the region
+  changes).
+- **Configurable style parameters:** style, room type, furniture density, etc.
+  are **not hardcoded** — they are registered in an admin screen and each option
+  carries a *prompt fragment* concatenated into the final instruction.
+- **Output format:** aspect ratio (`original`, 21:9, 16:9, 1:1, 3:4, 9:16, 4:3)
+  and resolution (1K/2K/4K). The aspect ratio is achieved via **crop**, **bars**
+  or **AI outpaint** (expanding the scene).
+- **1 to 4 variations** per request (generated in parallel).
+- **Prompt preview:** the UI shows and lets you **edit** the final prompt before
+  running a real (and billed) generation.
+- **Optional watermark:** a PNG stamped locally with `sharp` (no model cost),
+  with configurable position, size, opacity and color.
 
-### Vídeo (assíncrono, image-to-video)
-- **Estilos:** `motion` (a câmera se move por um cômodo congelado, via *presets*
-  de movimento) e `transform` (timelapse de reforma — quadro inicial → quadro
-  final).
-- No estilo `transform`, o **quadro final** ("depois") pode ser **enviado pelo
-  usuário** (manual) ou **gerado por IA** a partir do "antes" (auto).
-- **Modelos Veo** (3.1 / 3.1 Fast / 3.1 Lite / 2), com proporção, resolução,
-  duração e áudio validados por modelo.
-- Job criado em `processing` e **acompanhado por um poller** em background até
+### Video (asynchronous, image-to-video)
+- **Styles:** `motion` (the camera moves through a frozen room, via movement
+  *presets*) and `transform` (renovation timelapse — start frame → end frame).
+- In the `transform` style, the **end frame** ("after") can be **uploaded by the
+  user** (manual) or **AI-generated** from the "before" (auto).
+- **Veo models** (3.1 / 3.1 Fast / 3.1 Lite / 2), with aspect ratio, resolution,
+  duration and audio validated per model.
+- Job created as `processing` and **tracked by a background poller** until
   `done`/`error`.
 
-### Comum
-- **Estimativa de custo** (USD + BRL) por requisição — imagem via tokens, vídeo
-  via duração × preço/segundo.
-- **BYOK**: sem chave no servidor, cada requisição precisa trazer a sua.
+### Common
+- **Cost estimate** (USD + BRL) per request — image via tokens, video via
+  duration × price/second.
+- **BYOK**: without a server key, each request must bring its own.
 
 ---
 
 ## 🧱 Stack
 
-| Camada    | Tecnologias |
-|-----------|-------------|
+| Layer     | Technologies |
+|-----------|--------------|
 | Backend (`server/`)  | Node.js ≥ 20, **Fastify 5**, **Mongoose 8** (MongoDB), `@google/genai`, **sharp** (libvips), `nanoid` |
-| Frontend (`web/`)    | **React 18**, **Vite 6**, **Tailwind** + UI estilo shadcn (Radix), **Zustand**, React Router, `sonner` |
-| IA         | Google Gemini — imagem `gemini-3.1-flash-image` ("Nano Banana") e vídeo Veo |
-| Storage    | Disco local servido pelo Fastify em `/uploads` (abstraído para troca por S3) |
+| Frontend (`web/`)    | **React 18**, **Vite 6**, **Tailwind** + shadcn-style UI (Radix), **Zustand**, React Router, `sonner` |
+| AI         | Google Gemini — image `gemini-3.1-flash-image` ("Nano Banana") and video Veo |
+| Storage    | Local disk served by Fastify at `/uploads` (abstracted so it can be swapped for S3) |
 
-Monorepo com **npm workspaces** (`server` + `web`).
+Monorepo with **npm workspaces** (`server` + `web`).
 
 ---
 
-## 🚀 Começando
+## 🚀 Getting started
 
-### Pré-requisitos
+### Prerequisites
 - **Node.js ≥ 20**
-- **MongoDB** local (`mongodb://127.0.0.1:27017`) ou via Docker:
+- **MongoDB** locally (`mongodb://127.0.0.1:27017`) or via Docker:
   ```bash
-  docker run -d -p 27017:27017 --name decorar-mongo mongo:8
+  docker run -d -p 27017:27017 --name staging-mongo mongo:8
   ```
-- Uma **chave do Gemini** (servidor ou BYOK) com acesso a imagem e, se for usar
-  vídeo, a Veo. Gere em <https://aistudio.google.com/apikey>.
+- A **Gemini key** (server or BYOK) with access to image and, if you'll use
+  video, to Veo. Generate one at <https://aistudio.google.com/apikey>.
 
 ### Setup
 ```bash
-cp .env.example .env        # defina GEMINI_API_KEY (ou deixe vazio e use BYOK)
-npm install                 # instala server + web (workspaces)
-npm run seed                # popula os parâmetros de estilo sugeridos
-npm run dev                 # sobe backend (:3333) e frontend (:5173)
+cp .env.example .env        # set GEMINI_API_KEY (or leave empty and use BYOK)
+npm install                 # installs server + web (workspaces)
+npm run seed                # seeds the suggested style parameters
+npm run dev                 # starts backend (:3333) and frontend (:5173)
 ```
 
 - **App:** <http://localhost:5173>
-- **API:** <http://localhost:3333> — health check em `GET /health`
+- **API:** <http://localhost:3333> — health check at `GET /health`
 
-Sem chave no servidor **e** sem BYOK na interface, as rotas de geração respondem
-`422`. Veja todas as variáveis em [`docs/configuration.md`](docs/configuration.md).
+Without a server key **and** without BYOK in the UI, the generation routes
+respond `422`. See all variables in
+[`docs/configuration.md`](docs/configuration.md).
 
-### Scripts (raiz)
-| Script | O que faz |
-|--------|-----------|
-| `npm run dev`   | Sobe backend e frontend em paralelo |
-| `npm run seed`  | Popula os parâmetros de estilo no MongoDB |
-| `npm run build` | Build de produção do frontend (`web/dist`) |
-
----
-
-## 📚 Documentação
-
-| Documento | Conteúdo |
-|-----------|----------|
-| [`docs/architecture.md`](docs/architecture.md) | Arquitetura, fluxos de requisição (imagem síncrona / vídeo assíncrono), modelo de dados, storage e composição de prompts |
-| [`docs/api.md`](docs/api.md) | Referência completa da API (imagem, vídeo, admin) com campos e exemplos |
-| [`docs/configuration.md`](docs/configuration.md) | Todas as variáveis de ambiente |
-| [`docs/spec.md`](docs/spec.md) | Especificação do produto |
-| [`docs/design.md`](docs/design.md) · [`docs/design-system.md`](docs/design-system.md) | Design e design system |
+### Scripts (root)
+| Script | What it does |
+|--------|--------------|
+| `npm run dev`   | Starts backend and frontend in parallel |
+| `npm run seed`  | Seeds the style parameters into MongoDB |
+| `npm run build` | Production build of the frontend (`web/dist`) |
 
 ---
 
-## 🗂 Estrutura
+## 📚 Documentation
+
+| Document | Content |
+|----------|---------|
+| [`docs/architecture.md`](docs/architecture.md) | Architecture, request flows (synchronous image / asynchronous video), data model, storage and prompt composition |
+| [`docs/api.md`](docs/api.md) | Complete API reference (image, video, admin) with fields and examples |
+| [`docs/configuration.md`](docs/configuration.md) | All environment variables |
+| [`docs/spec.md`](docs/spec.md) | Product specification |
+| [`docs/design.md`](docs/design.md) · [`docs/design-system.md`](docs/design-system.md) | Design and design system |
+
+---
+
+## 🗂 Structure
 
 ```
 .
-├── server/                      # API Fastify
+├── server/                      # Fastify API
 │   └── src/
-│       ├── app.js               # monta o Fastify (CORS, multipart, estáticos, rotas)
-│       ├── index.js             # entrypoint: conecta o DB e sobe o servidor
-│       ├── config/env.js        # configuração validada via env
-│       ├── db/                  # conexão Mongoose
+│       ├── app.js               # builds Fastify (CORS, multipart, statics, routes)
+│       ├── index.js             # entrypoint: connects the DB and starts the server
+│       ├── config/env.js        # env-validated configuration
+│       ├── db/                  # Mongoose connection
 │       ├── models/              # StagingParameter, StagingJob, VideoJob
 │       ├── routes/
-│       │   ├── staging.js       # /v1/staging/* (config, preview, processar)
-│       │   ├── video.js         # /v1/video/* (config, criar, consultar job)
-│       │   └── admin.js         # /v1/admin/* (CRUD de parâmetros/opções)
+│       │   ├── staging.js       # /v1/staging/* (config, preview, process)
+│       │   ├── video.js         # /v1/video/* (config, create, query job)
+│       │   └── admin.js         # /v1/admin/* (CRUD of parameters/options)
 │       ├── services/
-│       │   ├── promptBuilder.js # monta o prompt final por modo
-│       │   ├── imageProvider.js # Gemini imagem (chave do servidor ou BYOK)
-│       │   ├── outputFormats.js # presets de proporção/resolução e validação
-│       │   ├── reframe.js       # reframe com sharp (crop/pad) + outpaint com IA
-│       │   ├── inpaint.js       # composição "paste-back" da edição mascarada
-│       │   ├── watermark.js     # estampa o PNG de marca d'água (sharp)
-│       │   ├── pricing.js       # estima custo de imagem (tokens → USD/BRL)
-│       │   ├── storage.js       # disco local → URL pública
+│       │   ├── promptBuilder.js # builds the final prompt per mode
+│       │   ├── imageProvider.js # Gemini image (server key or BYOK)
+│       │   ├── outputFormats.js # aspect/resolution presets and validation
+│       │   ├── reframe.js       # reframe with sharp (crop/pad) + AI outpaint
+│       │   ├── inpaint.js       # "paste-back" composition of the masked edit
+│       │   ├── watermark.js     # stamps the watermark PNG (sharp)
+│       │   ├── pricing.js       # estimates image cost (tokens → USD/BRL)
+│       │   ├── storage.js       # local disk → public URL
 │       │   └── video/           # registry, presets, poller, provider, pricing
-│       └── seed.js              # popula os parâmetros sugeridos
-└── web/                         # SPA React + Vite
+│       └── seed.js              # seeds the suggested parameters
+└── web/                         # React + Vite SPA
     └── src/
         ├── pages/               # StagingPage, VideoPage, ConfigPage
         ├── components/          # ImageDropzone, MaskCanvas, BeforeAfter, ui/ …
         ├── store/               # stagingStore, videoStore, configStore (Zustand)
-        └── lib/api.js           # cliente da API
+        └── lib/api.js           # API client
 ```
 
 ---
 
-## 🔌 API (resumo)
+## 🔌 API (summary)
 
-Referência completa em [`docs/api.md`](docs/api.md).
+Full reference in [`docs/api.md`](docs/api.md).
 
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| `GET`  | `/health` | Status do servidor e se há chave no servidor |
-| `GET`  | `/v1/staging/config` | Parâmetros ativos + modos + formatos de saída |
-| `POST` | `/v1/staging/preview-prompt` | Monta o prompt final sem gerar nada |
-| `POST` | `/v1/staging` | Processa a imagem (multipart) — **síncrono** |
-| `GET`  | `/v1/video/config` | Modelos, estilos, presets de movimento e preços |
-| `POST` | `/v1/video` | Cria um job de vídeo (multipart) — **assíncrono** (`202`) |
-| `GET`  | `/v1/video/:id` | Consulta o status/resultado de um job de vídeo |
-| `GET`/`POST`/`PATCH`/`DELETE` | `/v1/admin/parameters[...]` | CRUD de parâmetros e opções de estilo |
-
----
-
-## ⚠️ Segurança
-
-As rotas **`/v1/admin/*` não têm autenticação** neste MVP — qualquer um com acesso
-à API pode criar/editar/remover os parâmetros de estilo. Elas assumem uma sessão
-de admin já autenticada (fora do escopo desta versão). **Não faça deploy público
-sem antes plugar um middleware de auth** em `server/src/routes/admin.js`. Como
-está, rode apenas localmente ou em rede confiável.
-
-A chave BYOK do usuário **nunca é logada nem persistida** — fica só no navegador
-(localStorage) e é usada na requisição.
+| Method | Route | Description |
+|--------|-------|-------------|
+| `GET`  | `/health` | Server status and whether a server key exists |
+| `GET`  | `/v1/staging/config` | Active parameters + modes + output formats |
+| `POST` | `/v1/staging/preview-prompt` | Builds the final prompt without generating anything |
+| `POST` | `/v1/staging` | Processes the image (multipart) — **synchronous** |
+| `GET`  | `/v1/video/config` | Models, styles, movement presets and prices |
+| `POST` | `/v1/video` | Creates a video job (multipart) — **asynchronous** (`202`) |
+| `GET`  | `/v1/video/:id` | Queries the status/result of a video job |
+| `GET`/`POST`/`PATCH`/`DELETE` | `/v1/admin/parameters[...]` | CRUD of style parameters and options |
 
 ---
 
-## 🛣 Roadmap (fora desta versão)
+## ⚠️ Security
 
-Fila/processamento distribuído e webhook para imagem, máscara automática (a do
-modo `edit` é pintada à mão), consistência multi-view, multi-tenant, autenticação
-e storage em S3.
+The **`/v1/admin/*` routes have no authentication** in this MVP — anyone with
+access to the API can create/edit/remove the style parameters. They assume an
+already-authenticated admin session (out of scope for this version). **Do not
+deploy publicly without first plugging in an auth middleware** in
+`server/src/routes/admin.js`. As-is, run it only locally or on a trusted network.
+
+The user's BYOK key is **never logged or persisted** — it stays only in the
+browser (localStorage) and is used in the request.
 
 ---
 
-## 🤝 Contribuindo
+## 🛣 Roadmap (out of scope for this version)
 
-Veja [`CONTRIBUTING.md`](CONTRIBUTING.md).
+Distributed queue/processing and a webhook for image, automatic masking (the
+`edit` mode's is hand-painted), multi-view consistency, multi-tenant,
+authentication and S3 storage.
 
-## 📄 Licença
+---
+
+## 🤝 Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+## 📄 License
 
 [MIT](LICENSE).
