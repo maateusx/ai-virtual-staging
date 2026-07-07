@@ -38,7 +38,7 @@ que respeita paredes, janelas e piso — sem alterar a arquitetura.
 
 | Antes | Depois |
 |---|---|
-| <img src="web/public/landing/furnish-before.jpg" width="420" alt="Sala vazia"> | <img src="web/public/landing/furnish-after.jpg" width="420" alt="Mesma sala mobiliada pela IA"> |
+| <img src="web/public/landing/hero-antes.jpg" width="420" alt="Sala vazia"> | <img src="web/public/landing/hero-depois.jpg" width="420" alt="Mesma sala mobiliada pela IA"> |
 
 ### `empty` — esvaziar um cômodo ocupado
 

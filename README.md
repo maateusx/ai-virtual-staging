@@ -37,7 +37,7 @@ walls, windows and floor — without touching the architecture.
 
 | Before | After |
 |---|---|
-| <img src="web/public/landing/furnish-before.jpg" width="420" alt="Empty living room"> | <img src="web/public/landing/furnish-after.jpg" width="420" alt="Same room furnished by AI"> |
+| <img src="web/public/landing/hero-antes.jpg" width="420" alt="Empty living room"> | <img src="web/public/landing/hero-depois.jpg" width="420" alt="Same room furnished by AI"> |
 
 ### `empty` — empty an occupied room
 
